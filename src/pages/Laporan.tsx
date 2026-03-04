@@ -21,11 +21,22 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export const LaporanPage = () => {
-  const { barangMasukList, barangKeluarList, dpaTargets, updateDPATargets, settings } = useData();
+  const { barangMasukList, barangKeluarList, dpaTargets, updateDPATargets, settings, isLoading } = useData();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isEditingDPA, setIsEditingDPA] = useState(false);
   const [tempDPA, setTempDPA] = useState(dpaTargets);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-500 font-medium">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
 
   const months = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',

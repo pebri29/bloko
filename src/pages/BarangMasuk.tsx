@@ -27,10 +27,21 @@ import { useData } from '../context/DataContext';
 import { exportToExcel, exportToPDF } from '../lib/exportUtils';
 
 export const BarangMasuk = () => {
-  const { lsList, barangMasukList, addBarangMasuk, deleteBarangMasuk, updateBarangMasuk } = useData();
+  const { lsList, barangMasukList, addBarangMasuk, deleteBarangMasuk, updateBarangMasuk, isLoading } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view' | 'pull'>('pull');
   const [searchTerm, setSearchTerm] = useState('');
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-500 font-medium">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
   
   // Confirmation Modal State
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -131,7 +142,6 @@ export const BarangMasuk = () => {
     }
 
     const data = {
-      id: selectedId || Math.random().toString(36).substr(2, 9),
       tanggal: new Date(tanggalMasuk),
       suplier: suplier || (selectedLSId ? `Suplier LS (${selectedLSId})` : 'Suplier Umum'),
       jumlah: `${qty} Paket Sembako (${jenis})`,
@@ -143,8 +153,8 @@ export const BarangMasuk = () => {
 
     if (modalMode === 'add' || modalMode === 'pull') {
       addBarangMasuk(data);
-    } else {
-      updateBarangMasuk(data);
+    } else if (selectedId) {
+      updateBarangMasuk({ ...data, id: selectedId });
     }
 
     setIsModalOpen(false);

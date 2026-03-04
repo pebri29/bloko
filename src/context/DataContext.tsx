@@ -1,4 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { 
+  collection, 
+  onSnapshot, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  setDoc,
+  query,
+  orderBy,
+  Timestamp
+} from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface LSData {
   id: string;
@@ -16,7 +29,7 @@ interface IncomingGoods {
   id: string;
   tanggal: Date;
   suplier: string;
-  jumlah: string; // Keep for display if needed, but we'll use numeric fields for logic
+  jumlah: string;
   jumlahPaket: number;
   jenis: 'Sosial' | 'Bencana';
   status: 'Diterima' | 'Proses';
@@ -24,7 +37,7 @@ interface IncomingGoods {
 }
 
 interface OutgoingGoods {
-  id: number;
+  id: string;
   tanggal: Date;
   penerima: string;
   nik: string;
@@ -34,25 +47,6 @@ interface OutgoingGoods {
   jumlahPaket: number;
   keterangan: string;
   lsId?: string;
-}
-
-interface DataContextType {
-  lsList: LSData[];
-  addLS: (data: LSData) => void;
-  deleteLS: (id: string) => void;
-  updateLS: (data: LSData) => void;
-  barangMasukList: IncomingGoods[];
-  addBarangMasuk: (data: IncomingGoods) => void;
-  deleteBarangMasuk: (id: string) => void;
-  updateBarangMasuk: (data: IncomingGoods) => void;
-  barangKeluarList: OutgoingGoods[];
-  addBarangKeluar: (data: OutgoingGoods) => void;
-  deleteBarangKeluar: (id: number) => void;
-  updateBarangKeluar: (data: OutgoingGoods) => void;
-  dpaTargets: { sosial: number; bencana: number };
-  updateDPATargets: (targets: { sosial: number; bencana: number }) => void;
-  settings: AppSettings;
-  updateSettings: (settings: AppSettings) => void;
 }
 
 interface AppSettings {
@@ -66,78 +60,142 @@ interface AppSettings {
   instansi: string;
 }
 
+interface DataContextType {
+  lsList: LSData[];
+  addLS: (data: LSData) => Promise<void>;
+  deleteLS: (id: string) => Promise<void>;
+  updateLS: (data: LSData) => Promise<void>;
+  barangMasukList: IncomingGoods[];
+  addBarangMasuk: (data: Omit<IncomingGoods, 'id'>) => Promise<void>;
+  deleteBarangMasuk: (id: string) => Promise<void>;
+  updateBarangMasuk: (data: IncomingGoods) => Promise<void>;
+  barangKeluarList: OutgoingGoods[];
+  addBarangKeluar: (data: Omit<OutgoingGoods, 'id'>) => Promise<void>;
+  deleteBarangKeluar: (id: string) => Promise<void>;
+  updateBarangKeluar: (data: OutgoingGoods) => Promise<void>;
+  dpaTargets: { sosial: number; bencana: number };
+  updateDPATargets: (targets: { sosial: number; bencana: number }) => Promise<void>;
+  settings: AppSettings;
+  updateSettings: (settings: AppSettings) => Promise<void>;
+  isLoading: boolean;
+}
+
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+const DEFAULT_SETTINGS: AppSettings = {
+  appName: 'SiSembako',
+  appSubtitle: 'Sistem Informasi Logistik Sembako',
+  appLogo: '',
+  kopLogo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Lambang_Kabupaten_Blora.png/400px-Lambang_Kabupaten_Blora.png',
+  kepalaBidang: 'Nama Kepala Bidang Sosial',
+  nip: '19XXXXXXXXXXXXXX',
+  jabatan: 'Kepala Bidang Sosial',
+  instansi: 'Dinas Sosial, P3A Kabupaten Blora'
+};
+
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [lsList, setLsList] = useState<LSData[]>(() => {
-    const saved = localStorage.getItem('sembako_ls_list');
-    return saved ? JSON.parse(saved).map((item: any) => ({ ...item, tanggal: new Date(item.tanggal) })) : [];
-  });
+  const [lsList, setLsList] = useState<LSData[]>([]);
+  const [barangMasukList, setBarangMasukList] = useState<IncomingGoods[]>([]);
+  const [barangKeluarList, setBarangKeluarList] = useState<OutgoingGoods[]>([]);
+  const [dpaTargets, setDpaTargets] = useState({ sosial: 5000, bencana: 2000 });
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [barangMasukList, setBarangMasukList] = useState<IncomingGoods[]>(() => {
-    const saved = localStorage.getItem('sembako_masuk_list');
-    return saved ? JSON.parse(saved).map((item: any) => ({ ...item, tanggal: new Date(item.tanggal) })) : [];
-  });
+  useEffect(() => {
+    // Check if Firebase is configured
+    if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+      console.warn('Firebase API Key is missing. Real-time sync will not work.');
+      setIsLoading(false);
+      return;
+    }
 
-  const [barangKeluarList, setBarangKeluarList] = useState<OutgoingGoods[]>(() => {
-    const saved = localStorage.getItem('sembako_keluar_list');
-    return saved ? JSON.parse(saved).map((item: any) => ({ ...item, tanggal: new Date(item.tanggal) })) : [];
-  });
+    const unsubLS = onSnapshot(query(collection(db, 'lsList'), orderBy('tanggal', 'desc')), (snapshot) => {
+      setLsList(snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        tanggal: (doc.data().tanggal as Timestamp).toDate()
+      })) as LSData[]);
+    });
 
-  const [dpaTargets, setDpaTargets] = useState(() => {
-    const saved = localStorage.getItem('sembako_dpa_targets');
-    return saved ? JSON.parse(saved) : { sosial: 5000, bencana: 2000 }; // Default values
-  });
+    const unsubMasuk = onSnapshot(query(collection(db, 'barangMasuk'), orderBy('tanggal', 'desc')), (snapshot) => {
+      setBarangMasukList(snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        tanggal: (doc.data().tanggal as Timestamp).toDate()
+      })) as IncomingGoods[]);
+    });
 
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem('sembako_app_settings');
-    return saved ? JSON.parse(saved) : {
-      appName: 'SiSembako',
-      appSubtitle: 'Sistem Informasi Logistik Sembako',
-      appLogo: '', // Base64 or URL
-      kopLogo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Lambang_Kabupaten_Blora.png/400px-Lambang_Kabupaten_Blora.png',
-      kepalaBidang: 'Nama Kepala Bidang Sosial',
-      nip: '19XXXXXXXXXXXXXX',
-      jabatan: 'Kepala Bidang Sosial',
-      instansi: 'Dinas Sosial, P3A Kabupaten Blora'
+    const unsubKeluar = onSnapshot(query(collection(db, 'barangKeluar'), orderBy('tanggal', 'desc')), (snapshot) => {
+      setBarangKeluarList(snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        tanggal: (doc.data().tanggal as Timestamp).toDate()
+      })) as OutgoingGoods[]);
+    });
+
+    const unsubTargets = onSnapshot(doc(db, 'config', 'dpaTargets'), (doc) => {
+      if (doc.exists()) {
+        setDpaTargets(doc.data() as { sosial: number; bencana: number });
+      }
+    });
+
+    const unsubSettings = onSnapshot(doc(db, 'config', 'appSettings'), (doc) => {
+      if (doc.exists()) {
+        setSettings(doc.data() as AppSettings);
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      unsubLS();
+      unsubMasuk();
+      unsubKeluar();
+      unsubTargets();
+      unsubSettings();
     };
-  });
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('sembako_ls_list', JSON.stringify(lsList));
-  }, [lsList]);
+  const addLS = async (data: LSData) => {
+    const { id, ...rest } = data;
+    await setDoc(doc(db, 'lsList', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
+  };
+  const deleteLS = async (id: string) => {
+    await deleteDoc(doc(db, 'lsList', id));
+  };
+  const updateLS = async (data: LSData) => {
+    const { id, ...rest } = data;
+    await setDoc(doc(db, 'lsList', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
+  };
 
-  useEffect(() => {
-    localStorage.setItem('sembako_masuk_list', JSON.stringify(barangMasukList));
-  }, [barangMasukList]);
+  const addBarangMasuk = async (data: Omit<IncomingGoods, 'id'>) => {
+    await addDoc(collection(db, 'barangMasuk'), { ...data, tanggal: Timestamp.fromDate(data.tanggal) });
+  };
+  const deleteBarangMasuk = async (id: string) => {
+    await deleteDoc(doc(db, 'barangMasuk', id));
+  };
+  const updateBarangMasuk = async (data: IncomingGoods) => {
+    const { id, ...rest } = data;
+    await updateDoc(doc(db, 'barangMasuk', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
+  };
 
-  useEffect(() => {
-    localStorage.setItem('sembako_keluar_list', JSON.stringify(barangKeluarList));
-  }, [barangKeluarList]);
+  const addBarangKeluar = async (data: Omit<OutgoingGoods, 'id'>) => {
+    await addDoc(collection(db, 'barangKeluar'), { ...data, tanggal: Timestamp.fromDate(data.tanggal) });
+  };
+  const deleteBarangKeluar = async (id: string) => {
+    await deleteDoc(doc(db, 'barangKeluar', id));
+  };
+  const updateBarangKeluar = async (data: OutgoingGoods) => {
+    const { id, ...rest } = data;
+    await updateDoc(doc(db, 'barangKeluar', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
+  };
 
-  useEffect(() => {
-    localStorage.setItem('sembako_dpa_targets', JSON.stringify(dpaTargets));
-  }, [dpaTargets]);
+  const updateDPATargets = async (targets: { sosial: number; bencana: number }) => {
+    await setDoc(doc(db, 'config', 'dpaTargets'), targets);
+  };
 
-  useEffect(() => {
-    localStorage.setItem('sembako_app_settings', JSON.stringify(settings));
-  }, [settings]);
-
-  const addLS = (data: LSData) => setLsList(prev => [data, ...prev]);
-  const deleteLS = (id: string) => setLsList(prev => prev.filter(item => item.id !== id));
-  const updateLS = (data: LSData) => setLsList(prev => prev.map(item => item.id === data.id ? data : item));
-  
-  const addBarangMasuk = (data: IncomingGoods) => setBarangMasukList(prev => [data, ...prev]);
-  const deleteBarangMasuk = (id: string) => setBarangMasukList(prev => prev.filter(item => item.id !== id));
-  const updateBarangMasuk = (data: IncomingGoods) => setBarangMasukList(prev => prev.map(item => item.id === data.id ? data : item));
-
-  const addBarangKeluar = (data: OutgoingGoods) => setBarangKeluarList(prev => [data, ...prev]);
-  const deleteBarangKeluar = (id: number) => setBarangKeluarList(prev => prev.filter(item => item.id !== id));
-  const updateBarangKeluar = (data: OutgoingGoods) => setBarangKeluarList(prev => prev.map(item => item.id === data.id ? data : item));
-
-  const updateDPATargets = (targets: { sosial: number; bencana: number }) => setDpaTargets(targets);
-
-  const updateSettings = (newSettings: AppSettings) => setSettings(newSettings);
+  const updateSettings = async (newSettings: AppSettings) => {
+    await setDoc(doc(db, 'config', 'appSettings'), newSettings);
+  };
 
   return (
     <DataContext.Provider value={{ 
@@ -145,7 +203,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       barangMasukList, addBarangMasuk, deleteBarangMasuk, updateBarangMasuk,
       barangKeluarList, addBarangKeluar, deleteBarangKeluar, updateBarangKeluar,
       dpaTargets, updateDPATargets,
-      settings, updateSettings
+      settings, updateSettings,
+      isLoading
     }}>
       {children}
     </DataContext.Provider>

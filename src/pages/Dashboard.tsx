@@ -123,8 +123,19 @@ const WaterTank = ({ value, label, color, max = 5000 }: { value: number; label: 
 };
 
 export const Dashboard = () => {
-  const { lsList, barangMasukList, barangKeluarList, settings, dpaTargets } = useData();
+  const { lsList, barangMasukList, barangKeluarList, settings, dpaTargets, isLoading } = useData();
   const [activeIndex, setActiveIndex] = useState(0);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-500 font-medium">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
 
   const onPieEnter = (_: any, index: number) => {
     setActiveIndex(index);

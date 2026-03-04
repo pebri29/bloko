@@ -26,10 +26,21 @@ import { exportToExcel, exportToPDF } from '../lib/exportUtils';
 const PRICE_PER_PACKAGE = 299900;
 
 export const LSPage = () => {
-  const { lsList, barangMasukList, addLS, deleteLS, updateLS } = useData();
+  const { lsList, barangMasukList, addLS, deleteLS, updateLS, isLoading } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-500 font-medium">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
   
   // Confirmation Modal State
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -134,8 +145,8 @@ export const LSPage = () => {
         return;
       }
       addLS(data);
-    } else {
-      updateLS(data);
+    } else if (selectedId) {
+      updateLS({ ...data, id: selectedId });
     }
 
     setIsModalOpen(false);

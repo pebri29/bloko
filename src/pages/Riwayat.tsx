@@ -28,9 +28,20 @@ type HistoryItem = {
 };
 
 export const RiwayatPage = () => {
-  const { lsList, barangMasukList, barangKeluarList } = useData();
+  const { lsList, barangMasukList, barangKeluarList, isLoading } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedLS, setExpandedLS] = useState<string | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-500 font-medium">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Grouping logic
   const allHistory: HistoryItem[] = [

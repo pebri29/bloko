@@ -26,16 +26,27 @@ import { useData } from '../context/DataContext';
 import { exportToExcel, exportToPDF } from '../lib/exportUtils';
 
 export const BarangKeluar = () => {
-  const { lsList, barangMasukList, barangKeluarList, deleteBarangKeluar, addBarangKeluar, updateBarangKeluar } = useData();
+  const { lsList, barangMasukList, barangKeluarList, deleteBarangKeluar, addBarangKeluar, updateBarangKeluar, isLoading } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('Semua');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-500 font-medium">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Confirmation Modal State
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   // Form State
   const [penerima, setPenerima] = useState('');
@@ -115,7 +126,7 @@ export const BarangKeluar = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = (id: string) => {
     setItemToDelete(id);
     setIsConfirmOpen(true);
   };
@@ -138,7 +149,6 @@ export const BarangKeluar = () => {
     }
 
     const data = {
-      id: selectedId || Date.now(),
       tanggal: new Date(tanggal),
       penerima,
       nik,
@@ -151,8 +161,8 @@ export const BarangKeluar = () => {
 
     if (modalMode === 'add') {
       addBarangKeluar(data);
-    } else {
-      updateBarangKeluar(data);
+    } else if (selectedId) {
+      updateBarangKeluar({ ...data, id: selectedId });
     }
 
     setIsModalOpen(false);
