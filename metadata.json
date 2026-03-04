@@ -1,0 +1,8 @@
+{
+  "name": "Sembako-Flow",
+  "description": "Aplikasi Manajemen Stok Sembako dengan estetika iOS, realtime database Firebase, dan animasi elegan.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
