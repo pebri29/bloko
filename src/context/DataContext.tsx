@@ -113,7 +113,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLsList(snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id,
-        tanggal: (doc.data().tanggal as Timestamp).toDate()
+        tanggal: doc.data().tanggal ? (doc.data().tanggal as Timestamp).toDate() : new Date()
       })) as LSData[]);
     }, (error) => {
       console.error('Error listening to LS list:', error);
@@ -123,7 +123,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setBarangMasukList(snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id,
-        tanggal: (doc.data().tanggal as Timestamp).toDate()
+        tanggal: doc.data().tanggal ? (doc.data().tanggal as Timestamp).toDate() : new Date()
       })) as IncomingGoods[]);
     }, (error) => {
       console.error('Error listening to barang masuk:', error);
@@ -133,7 +133,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setBarangKeluarList(snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id,
-        tanggal: (doc.data().tanggal as Timestamp).toDate()
+        tanggal: doc.data().tanggal ? (doc.data().tanggal as Timestamp).toDate() : new Date()
       })) as OutgoingGoods[]);
     }, (error) => {
       console.error('Error listening to barang keluar:', error);
@@ -148,6 +148,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     const unsubSettings = onSnapshot(doc(db, 'config', 'appSettings'), (doc) => {
+      console.log('App settings snapshot received, exists:', doc.exists());
       if (doc.exists()) {
         setSettings(doc.data() as AppSettings);
       }
@@ -157,7 +158,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     });
 
+    // Safety timeout: if data doesn't load in 5 seconds, show the app anyway
+    const timeout = setTimeout(() => {
+      setIsLoading(prev => {
+        if (prev) {
+          console.warn('Data loading timed out. Showing app with default/cached data.');
+          return false;
+        }
+        return prev;
+      });
+    }, 5000);
+
     return () => {
+      clearTimeout(timeout);
       unsubLS();
       unsubMasuk();
       unsubKeluar();
