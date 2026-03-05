@@ -57,6 +57,7 @@ export const BarangKeluar = () => {
   const [jumlahPaket, setJumlahPaket] = useState('');
   const [tanggal, setTanggal] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [keterangan, setKeterangan] = useState('');
+  const [status, setStatus] = useState<'Selesai' | 'Belum Selesai'>('Belum Selesai');
   
   // Nested Keterangan State
   const [ketLevel1, setKetLevel1] = useState('');
@@ -70,9 +71,9 @@ export const BarangKeluar = () => {
   ];
 
   const KET_OPTIONS = {
-    'Bencana Alam': ['Gempa Bumi', 'Letusan Gunung', 'Banjir', 'Tanah longsor', 'lainnya (sebutkan)'],
+    'Bencana Alam': ['Gempa Bumi', 'Letusan Gunung', 'Banjir', 'Tanah longsor', 'Angin Kencang', 'lainnya (sebutkan)'],
     'Bencana Non Alam': ['Kebakaran akibat korsleting listrik', 'kecelakaan industri', 'pencemaran lingkungan', 'wabah penyakit', 'lainnya (sebutkan)'],
-    'Sosial': ['anak telantar', 'lansia terlantar', 'disabilitas', 'gelandangan', 'korban bencana', 'fakir miskin', 'lainnya (sebutkan)']
+    'Sosial': ['anak telantar', 'lansia terlantar', 'disabilitas', 'gelandangan', 'ODGJ', 'fakir miskin', 'lainnya (sebutkan)']
   };
 
   const resetForm = () => {
@@ -84,6 +85,7 @@ export const BarangKeluar = () => {
     setJumlahPaket('');
     setTanggal(format(new Date(), 'yyyy-MM-dd'));
     setKeterangan('');
+    setStatus('Belum Selesai');
     setKetLevel1('');
     setKetLevel2('');
     setKetLainnya('');
@@ -123,6 +125,7 @@ export const BarangKeluar = () => {
     setJumlahPaket(item.jumlahPaket.toString());
     setTanggal(format(new Date(item.tanggal), 'yyyy-MM-dd'));
     setKeterangan(item.keterangan);
+    setStatus(item.status || 'Belum Selesai');
     
     // Parse keterangan for nested dropdowns if possible
     const parts = item.keterangan.split(' - ');
@@ -157,6 +160,7 @@ export const BarangKeluar = () => {
     setJumlahPaket(item.jumlahPaket.toString());
     setTanggal(format(new Date(item.tanggal), 'yyyy-MM-dd'));
     setKeterangan(item.keterangan);
+    setStatus(item.status || 'Belum Selesai');
     setIsModalOpen(true);
   };
 
@@ -208,7 +212,8 @@ export const BarangKeluar = () => {
       kecamatan,
       jenis,
       jumlahPaket: qty,
-      keterangan: finalKeterangan
+      keterangan: finalKeterangan,
+      status
     };
 
     try {
@@ -589,6 +594,27 @@ export const BarangKeluar = () => {
                       {parseInt(jumlahPaket) > availableStock && (
                         <p className="text-[10px] text-red-500 font-bold ml-1">Jumlah melebihi stok tersedia!</p>
                       )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Status Penyaluran</label>
+                      <div className="flex p-1 bg-slate-50 rounded-2xl border border-slate-100">
+                        {(['Selesai', 'Belum Selesai'] as const).map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            disabled={modalMode === 'view'}
+                            onClick={() => setStatus(s)}
+                            className={cn(
+                              "flex-1 py-2 rounded-xl text-sm font-bold transition-all",
+                              status === s ? "bg-white text-blue-600 shadow-sm" : "text-slate-400",
+                              modalMode === 'view' && "cursor-default"
+                            )}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Nested Keterangan Dropdown */}

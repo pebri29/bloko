@@ -46,6 +46,7 @@ interface OutgoingGoods {
   jenis: 'Sosial' | 'Bencana';
   jumlahPaket: number;
   keterangan: string;
+  status?: 'Selesai' | 'Belum Selesai';
   lsId?: string;
 }
 
@@ -83,9 +84,9 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 const DEFAULT_SETTINGS: AppSettings = {
-  appName: 'SiSembako',
-  appSubtitle: 'Sistem Informasi Logistik Sembako',
-  appLogo: '',
+  appName: 'BLOKO',
+  appSubtitle: 'Blora Sembako Sosial',
+  appLogo: 'https://i.ibb.co/v6yXy6p/bloko-logo.png',
   kopLogo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Lambang_Kabupaten_Blora.png/400px-Lambang_Kabupaten_Blora.png',
   kepalaBidang: 'Nama Kepala Bidang Sosial',
   nip: '19XXXXXXXXXXXXXX',

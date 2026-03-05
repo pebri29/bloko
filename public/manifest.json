@@ -1,0 +1,21 @@
+{
+  "name": "Blora Sembako Sosial",
+  "short_name": "BLOKO",
+  "description": "Aplikasi Manajemen Stok Sembako Blora",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F2F2F7",
+  "theme_color": "#3B82F6",
+  "icons": [
+    {
+      "src": "https://i.ibb.co/v6yXy6p/bloko-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.ibb.co/v6yXy6p/bloko-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
