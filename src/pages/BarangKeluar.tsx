@@ -187,6 +187,11 @@ export const BarangKeluar = () => {
     e.preventDefault();
     if (!selectedVerifyItem) return;
 
+    if (verifyStatus !== 'Selesai' && verifyStatus !== 'Belum Selesai') {
+      alert('Silakan pilih status (Selesai atau Belum Selesai) terlebih dahulu.');
+      return;
+    }
+
     try {
       await updateBarangKeluar({
         ...selectedVerifyItem,
@@ -438,11 +443,13 @@ export const BarangKeluar = () => {
                       <div className="flex flex-col gap-1">
                         <span className={cn(
                           "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider w-fit",
-                          item.status === 'Selesai' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                          item.status === 'Selesai' ? "bg-emerald-50 text-emerald-600" : 
+                          item.status?.startsWith('Permohonan') ? "bg-blue-50 text-blue-600" :
+                          "bg-amber-50 text-amber-600"
                         )}>
                           {item.status || 'Belum Selesai'}
                         </span>
-                        {item.status === 'Belum Selesai' && item.keterangan && (
+                        {(item.status === 'Belum Selesai' || item.status?.startsWith('Permohonan')) && item.keterangan && (
                           <span className="text-[10px] text-slate-400 italic line-clamp-1 max-w-[120px]">
                             {item.keterangan}
                           </span>

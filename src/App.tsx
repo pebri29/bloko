@@ -10,6 +10,7 @@ import { LaporanPage } from './pages/Laporan';
 import { SettingsPage } from './pages/Settings';
 import { BeritaAcaraPage } from './pages/BeritaAcara';
 import { RekapIndikatorPage } from './pages/RekapIndikator';
+import { PermohonanMobile } from './pages/PermohonanMobile';
 import { AnimatePresence } from 'motion/react';
 
 const Placeholder = ({ title }: { title: string }) => (
@@ -21,6 +22,17 @@ const Placeholder = ({ title }: { title: string }) => (
 
 export default function App() {
   const location = useLocation();
+  const isMobileForm = location.pathname === '/permohonan';
+
+  if (isMobileForm) {
+    return (
+      <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+        <Routes>
+          <Route path="/permohonan" element={<PermohonanMobile />} />
+        </Routes>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F2F2F7] font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-600">

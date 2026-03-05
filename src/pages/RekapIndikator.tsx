@@ -115,6 +115,20 @@ export const RekapIndikatorPage = () => {
     exportToPDF('Rekap Indikator Penyaluran Sembako', headers, data, 'Rekap_Indikator');
   };
 
+  const handleExportDetailPDF = () => {
+    if (!selectedData) return;
+    const headers = [['Tanggal', 'Penerima', 'Kecamatan', 'Jumlah', 'Jenis Penyaluran', 'Status']];
+    const data = selectedData.map(item => [
+      format(new Date(item.tanggal), 'dd/MM/yyyy'),
+      item.penerima,
+      item.kecamatan || '-',
+      `${item.jumlahPaket} Pkt`,
+      item.jenisPenyaluran || item.keterangan || '-',
+      item.status || 'Belum Selesai'
+    ]);
+    exportToPDF(`Detail Data: ${detailTitle}`, headers, data, `Detail_${detailTitle.replace(/\s+/g, '_')}`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -154,8 +168,14 @@ export const RekapIndikatorPage = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <GlassCard className="p-6 flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center">
+        <GlassCard 
+          onClick={() => {
+            setSelectedData(barangKeluarList);
+            setDetailTitle('Semua Data Penerima');
+          }}
+          className="p-6 flex items-center gap-4 cursor-pointer hover:bg-white/80 transition-all group"
+        >
+          <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
             <Users size={24} />
           </div>
           <div>
@@ -163,8 +183,14 @@ export const RekapIndikatorPage = () => {
             <p className="text-2xl font-black text-slate-900">{barangKeluarList.length}</p>
           </div>
         </GlassCard>
-        <GlassCard className="p-6 flex items-center gap-4">
-          <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center">
+        <GlassCard 
+          onClick={() => {
+            setSelectedData(barangKeluarList);
+            setDetailTitle('Semua Data Penyaluran Paket');
+          }}
+          className="p-6 flex items-center gap-4 cursor-pointer hover:bg-white/80 transition-all group"
+        >
+          <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
             <Package size={24} />
           </div>
           <div>
@@ -174,8 +200,16 @@ export const RekapIndikatorPage = () => {
             </p>
           </div>
         </GlassCard>
-        <GlassCard className="p-6 flex items-center gap-4">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center">
+        <GlassCard 
+          onClick={() => {
+            if (kecamatanData[0]) {
+              setSelectedData(kecamatanData[0].items);
+              setDetailTitle(`Kecamatan Terbanyak: ${kecamatanData[0].name}`);
+            }
+          }}
+          className="p-6 flex items-center gap-4 cursor-pointer hover:bg-white/80 transition-all group"
+        >
+          <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
             <TrendingUp size={24} />
           </div>
           <div>
@@ -201,7 +235,12 @@ export const RekapIndikatorPage = () => {
               <BarChart 
                 data={kecamatanData} 
                 layout="vertical"
-                onClick={(data) => data && handleChartClick(data.activePayload?.[0]?.payload, `Kecamatan: ${data.activePayload?.[0]?.payload.name}`)}
+                onClick={(data) => {
+                  const payload = data?.activePayload?.[0]?.payload;
+                  if (payload) {
+                    handleChartClick(payload, `Kecamatan: ${payload.name}`);
+                  }
+                }}
               >
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                 <XAxis type="number" hide />
@@ -279,7 +318,12 @@ export const RekapIndikatorPage = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={subKategoriData}
-                onClick={(data) => data && handleChartClick(data.activePayload?.[0]?.payload, `Kategori: ${data.activePayload?.[0]?.payload.name}`)}
+                onClick={(data) => {
+                  const payload = data?.activePayload?.[0]?.payload;
+                  if (payload) {
+                    handleChartClick(payload, `Kategori: ${payload.name}`);
+                  }
+                }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis 
@@ -374,7 +418,14 @@ export const RekapIndikatorPage = () => {
                 </table>
               </div>
 
-              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                <button 
+                  onClick={handleExportDetailPDF}
+                  className="flex items-center gap-2 px-6 py-3 bg-rose-50 text-rose-600 rounded-2xl font-bold hover:bg-rose-100 transition-all active:scale-95"
+                >
+                  <FilePdf size={20} />
+                  Cetak PDF
+                </button>
                 <button 
                   onClick={() => setSelectedData(null)}
                   className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold transition-all active:scale-95"
