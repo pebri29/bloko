@@ -171,7 +171,7 @@ export const BarangMasuk = () => {
       'Tanggal': format(new Date(item.tanggal), 'dd/MM/yyyy'),
       'Suplier': item.suplier,
       'Jumlah Paket': item.jumlahPaket,
-      'Jenis': item.jenis,
+      'Jenis': item.jenis === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)',
       'Status': item.status,
       'LS ID': item.lsId || '-'
     }));
@@ -185,7 +185,7 @@ export const BarangMasuk = () => {
       item.suplier,
       item.lsId || '-',
       `${item.jumlahPaket} Pkt`,
-      item.jenis,
+      item.jenis === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)',
       item.status
     ]);
     exportToPDF('Laporan Barang Masuk', headers, data, 'Laporan_Barang_Masuk');
@@ -288,9 +288,17 @@ export const BarangMasuk = () => {
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <span className="font-bold text-slate-900">{item.suplier}</span>
-                          {item.lsId && (
-                            <span className="text-[10px] text-blue-500 font-bold uppercase tracking-tight">Ref: {item.lsId}</span>
-                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={cn(
+                              "text-[9px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-md",
+                              item.jenis === 'Sosial' ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                            )}>
+                              {item.jenis === 'Sosial' ? 'SOSIAL' : 'BENCANA'}
+                            </span>
+                            {item.lsId && (
+                              <span className="text-[10px] text-blue-500 font-bold uppercase tracking-tight">Ref: {item.lsId}</span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -403,7 +411,7 @@ export const BarangMasuk = () => {
                             if (remaining <= 0 && modalMode === 'pull') return null;
                             return (
                               <option key={ls.id} value={ls.id}>
-                                {ls.id} ({remaining} Sisa - {ls.jenis})
+                                {ls.id} ({remaining} Sisa - {ls.jenis === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)'})
                               </option>
                             );
                           })}
@@ -446,7 +454,7 @@ export const BarangMasuk = () => {
                                 modalMode === 'view' && "cursor-default"
                               )}
                             >
-                              {t}
+                              {t === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)'}
                             </button>
                           ))}
                         </div>

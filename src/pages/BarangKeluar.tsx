@@ -57,12 +57,23 @@ export const BarangKeluar = () => {
   const [jumlahPaket, setJumlahPaket] = useState('');
   const [tanggal, setTanggal] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [keterangan, setKeterangan] = useState('');
+  
+  // Nested Keterangan State
+  const [ketLevel1, setKetLevel1] = useState('');
+  const [ketLevel2, setKetLevel2] = useState('');
+  const [ketLainnya, setKetLainnya] = useState('');
 
   const KECAMATAN_BLORA = [
     'Banjarejo', 'Blora', 'Bogorejo', 'Cepu', 'Japah', 'Jati', 'Jepon', 'Jiken',
     'Kedungtuban', 'Kradenan', 'Kunduran', 'Ngawen', 'Randublatung', 'Sambong',
     'Todanan', 'Tunjungan'
   ];
+
+  const KET_OPTIONS = {
+    'Bencana Alam': ['Gempa Bumi', 'Letusan Gunung', 'Banjir', 'Tanah longsor', 'lainnya (sebutkan)'],
+    'Bencana Non Alam': ['Kebakaran akibat korsleting listrik', 'kecelakaan industri', 'pencemaran lingkungan', 'wabah penyakit', 'lainnya (sebutkan)'],
+    'Sosial': ['anak telantar', 'lansia terlantar', 'disabilitas', 'gelandangan', 'korban bencana', 'fakir miskin', 'lainnya (sebutkan)']
+  };
 
   const resetForm = () => {
     setPenerima('');
@@ -73,6 +84,9 @@ export const BarangKeluar = () => {
     setJumlahPaket('');
     setTanggal(format(new Date(), 'yyyy-MM-dd'));
     setKeterangan('');
+    setKetLevel1('');
+    setKetLevel2('');
+    setKetLainnya('');
     setSelectedId(null);
   };
 
@@ -109,6 +123,26 @@ export const BarangKeluar = () => {
     setJumlahPaket(item.jumlahPaket.toString());
     setTanggal(format(new Date(item.tanggal), 'yyyy-MM-dd'));
     setKeterangan(item.keterangan);
+    
+    // Parse keterangan for nested dropdowns if possible
+    const parts = item.keterangan.split(' - ');
+    if (parts.length >= 2) {
+      setKetLevel1(parts[0]);
+      if (KET_OPTIONS[parts[0] as keyof typeof KET_OPTIONS]?.includes(parts[1])) {
+        setKetLevel2(parts[1]);
+        if (parts[1] === 'lainnya (sebutkan)' && parts[2]) {
+          setKetLainnya(parts[2]);
+        }
+      } else {
+        setKetLevel2('lainnya (sebutkan)');
+        setKetLainnya(parts[1]);
+      }
+    } else {
+      setKetLevel1('');
+      setKetLevel2('');
+      setKetLainnya(item.keterangan);
+    }
+    
     setIsModalOpen(true);
   };
 
@@ -142,10 +176,28 @@ export const BarangKeluar = () => {
     e.preventDefault();
     if (modalMode === 'view') return;
 
+    if (nik.length !== 16) {
+      alert('NIK harus tepat 16 digit!');
+      return;
+    }
+
     const qty = parseInt(jumlahPaket);
     if (qty > availableStock) {
       alert(`Stok tidak mencukupi! Stok tersedia untuk ${jenis}: ${availableStock} paket.`);
       return;
+    }
+
+    let finalKeterangan = '';
+    if (ketLevel1) {
+      finalKeterangan = ketLevel1;
+      if (ketLevel2) {
+        finalKeterangan += ` - ${ketLevel2}`;
+        if (ketLevel2 === 'lainnya (sebutkan)' && ketLainnya) {
+          finalKeterangan += ` - ${ketLainnya}`;
+        }
+      }
+    } else {
+      finalKeterangan = ketLainnya;
     }
 
     const data = {
@@ -156,7 +208,7 @@ export const BarangKeluar = () => {
       kecamatan,
       jenis,
       jumlahPaket: qty,
-      keterangan
+      keterangan: finalKeterangan
     };
 
     try {
@@ -181,7 +233,7 @@ export const BarangKeluar = () => {
       'NIK': item.nik,
       'Alamat': item.alamat,
       'Kecamatan': item.kecamatan || '-',
-      'Jenis': item.jenis,
+      'Jenis': item.jenis === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)',
       'Jumlah Paket': item.jumlahPaket,
       'Keterangan': item.keterangan || '-'
     }));
@@ -195,7 +247,7 @@ export const BarangKeluar = () => {
       item.penerima,
       item.kecamatan || '-',
       `${item.jumlahPaket} Pkt`,
-      item.jenis,
+      item.jenis === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)',
       item.keterangan || '-'
     ]);
     exportToPDF('Laporan Barang Keluar', headers, data, 'Laporan_Barang_Keluar');
@@ -273,7 +325,7 @@ export const BarangKeluar = () => {
                   : "bg-white/60 backdrop-blur-xl border border-white/40 text-slate-600 hover:bg-white/80"
               )}
             >
-              {type === 'Bencana' ? 'Kebencanaan' : type}
+              {type === 'Semua' ? 'Semua' : type === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)'}
             </button>
           ))}
         </div>
@@ -318,7 +370,7 @@ export const BarangKeluar = () => {
                           "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full w-fit mb-1",
                           item.jenis === 'Sosial' ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"
                         )}>
-                          {item.jenis}
+                          {item.jenis === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)'}
                         </span>
                         <span className="text-sm font-medium text-slate-700">{item.jumlahPaket} Paket</span>
                       </div>
@@ -382,7 +434,7 @@ export const BarangKeluar = () => {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative w-full max-w-2xl bg-white/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/50 overflow-hidden"
             >
-              <div className="p-8">
+              <div className="p-8 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl font-bold text-slate-900">
                     {modalMode === 'add' ? 'Tambah Data Pengeluaran' : modalMode === 'edit' ? 'Edit Data Pengeluaran' : 'Detail Pengeluaran'}
@@ -414,19 +466,29 @@ export const BarangKeluar = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-1">NIK</label>
+                      <label className="text-sm font-bold text-slate-700 ml-1">NIK (16 Digit)</label>
                       <div className="relative">
                         <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input 
                           type="text" 
                           required
+                          maxLength={16}
                           disabled={modalMode === 'view'}
                           placeholder="16 Digit NIK"
                           value={nik}
-                          onChange={(e) => setNik(e.target.value)}
-                          className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50"
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '');
+                            if (val.length <= 16) setNik(val);
+                          }}
+                          className={cn(
+                            "w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50",
+                            nik.length > 0 && nik.length !== 16 && "border-amber-400 focus:ring-amber-500/20"
+                          )}
                         />
                       </div>
+                      {nik.length > 0 && nik.length !== 16 && (
+                        <p className="text-[10px] text-amber-600 font-bold ml-1">Harus 16 digit (Sekarang: {nik.length})</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -446,6 +508,21 @@ export const BarangKeluar = () => {
                           ))}
                         </select>
                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Tanggal Keluar</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input 
+                          type="date" 
+                          required
+                          disabled={modalMode === 'view'}
+                          value={tanggal}
+                          onChange={(e) => setTanggal(e.target.value)}
+                          className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50"
+                        />
                       </div>
                     </div>
 
@@ -484,7 +561,7 @@ export const BarangKeluar = () => {
                                 modalMode === 'view' && "cursor-default"
                               )}
                             >
-                              <span>{t === 'Bencana' ? 'Kebencanaan' : t}</span>
+                              <span>{t === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)'}</span>
                               <span className="text-[9px] opacity-70">Stok: {stock}</span>
                             </button>
                           );
@@ -514,33 +591,74 @@ export const BarangKeluar = () => {
                       )}
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-1">Tanggal Keluar</label>
-                      <div className="relative">
-                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input 
-                          type="date" 
-                          required
-                          disabled={modalMode === 'view'}
-                          value={tanggal}
-                          onChange={(e) => setTanggal(e.target.value)}
-                          className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50"
-                        />
-                      </div>
-                    </div>
+                    {/* Nested Keterangan Dropdown */}
+                    <div className="space-y-4 md:col-span-2 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+                      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <FileText size={16} className="text-blue-500" />
+                        Keterangan Bertingkat
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-500 ml-1">Kategori Utama</label>
+                          <div className="relative">
+                            <select 
+                              disabled={modalMode === 'view'}
+                              value={ketLevel1}
+                              onChange={(e) => {
+                                setKetLevel1(e.target.value);
+                                setKetLevel2('');
+                                setKetLainnya('');
+                              }}
+                              className="w-full px-4 py-3 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none disabled:opacity-50"
+                            >
+                              <option value="">-- Pilih Kategori --</option>
+                              {Object.keys(KET_OPTIONS).map(opt => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                          </div>
+                        </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-1">Keterangan</label>
-                      <div className="relative">
-                        <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input 
-                          type="text" 
-                          disabled={modalMode === 'view'}
-                          placeholder="Opsional"
-                          value={keterangan}
-                          onChange={(e) => setKeterangan(e.target.value)}
-                          className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50"
-                        />
+                        {ketLevel1 && (
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 ml-1">Sub Kategori</label>
+                            <div className="relative">
+                              <select 
+                                disabled={modalMode === 'view'}
+                                value={ketLevel2}
+                                onChange={(e) => {
+                                  setKetLevel2(e.target.value);
+                                  if (e.target.value !== 'lainnya (sebutkan)') setKetLainnya('');
+                                }}
+                                className="w-full px-4 py-3 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none disabled:opacity-50"
+                              >
+                                <option value="">-- Pilih Sub Kategori --</option>
+                                {KET_OPTIONS[ketLevel1 as keyof typeof KET_OPTIONS].map(opt => (
+                                  <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                              </select>
+                              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                            </div>
+                          </div>
+                        )}
+
+                        {(ketLevel2 === 'lainnya (sebutkan)' || (!ketLevel1 && modalMode !== 'view')) && (
+                          <div className="space-y-2 md:col-span-2">
+                            <label className="text-xs font-bold text-slate-500 ml-1">
+                              {ketLevel2 === 'lainnya (sebutkan)' ? 'Sebutkan Lainnya' : 'Keterangan Manual'}
+                            </label>
+                            <input 
+                              type="text" 
+                              disabled={modalMode === 'view'}
+                              placeholder="Ketik keterangan di sini..."
+                              value={ketLainnya}
+                              onChange={(e) => setKetLainnya(e.target.value)}
+                              className="w-full px-4 py-3 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -23,7 +23,7 @@ import { cn } from '../lib/utils';
 import { useData } from '../context/DataContext';
 import { exportToExcel, exportToPDF } from '../lib/exportUtils';
 
-const PRICE_PER_PACKAGE = 299900;
+const PRICE_PER_PACKAGE = 311000;
 
 export const LSPage = () => {
   const { lsList, barangMasukList, addLS, deleteLS, updateLS, isLoading } = useData();
@@ -276,7 +276,7 @@ export const LSPage = () => {
                               "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full w-fit mt-1",
                               item.jenis === 'Sosial' ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"
                             )}>
-                              {item.jenis}
+                              {item.jenis === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)'}
                             </span>
                           </div>
                         </td>
@@ -412,7 +412,7 @@ export const LSPage = () => {
                               modalMode === 'view' && "cursor-default"
                             )}
                           >
-                            {t}
+                            {t === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)'}
                           </button>
                         ))}
                       </div>
