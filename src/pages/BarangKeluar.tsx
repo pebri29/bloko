@@ -74,6 +74,8 @@ export const BarangKeluar = () => {
   const [ketLevel2, setKetLevel2] = useState('');
   const [ketLainnya, setKetLainnya] = useState('');
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
   const KECAMATAN_BLORA = [
     'Banjarejo', 'Blora', 'Bogorejo', 'Cepu', 'Japah', 'Jati', 'Jepon', 'Jiken',
     'Kedungtuban', 'Kradenan', 'Kunduran', 'Ngawen', 'Randublatung', 'Sambong',
@@ -314,6 +316,42 @@ export const BarangKeluar = () => {
     return matchesSearch && matchesFilter;
   });
 
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredData.length && filteredData.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredData.map(item => item.id));
+    }
+  };
+
+  const toggleSelectItem = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkVerify = async () => {
+    if (selectedIds.length === 0) return;
+    
+    if (!window.confirm(`Verifikasi ${selectedIds.length} data sekaligus menjadi "Selesai"?`)) return;
+
+    try {
+      const promises = selectedIds.map(id => {
+        const item = barangKeluarList.find(i => i.id === id);
+        if (item && item.status !== 'Selesai') {
+          return updateBarangKeluar({ ...item, status: 'Selesai' });
+        }
+        return Promise.resolve();
+      });
+      await Promise.all(promises);
+      setSelectedIds([]);
+      alert('Berhasil memverifikasi data terpilih.');
+    } catch (error) {
+      console.error('Error bulk verifying:', error);
+      alert('Gagal memverifikasi beberapa data.');
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -327,6 +365,20 @@ export const BarangKeluar = () => {
           <p className="text-slate-500 mt-1">Kelola distribusi sembako kepada masyarakat.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <AnimatePresence>
+            {selectedIds.length > 0 && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                onClick={handleBulkVerify}
+                className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all"
+              >
+                <CheckCircle size={18} />
+                Verifikasi ({selectedIds.length})
+              </motion.button>
+            )}
+          </AnimatePresence>
           <div className="flex bg-white/60 backdrop-blur-xl border border-white/40 rounded-2xl p-1">
             <button 
               onClick={handleExportExcel}
@@ -390,6 +442,14 @@ export const BarangKeluar = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-100">
+                <th className="px-6 py-4 w-10">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedIds.length === filteredData.length && filteredData.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Penerima</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Jenis & Jumlah</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Jenis Penyaluran</th>
@@ -401,7 +461,7 @@ export const BarangKeluar = () => {
             <tbody className="divide-y divide-slate-50">
               {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
                     Tidak ada data barang keluar.
                   </td>
                 </tr>
@@ -411,8 +471,19 @@ export const BarangKeluar = () => {
                     key={item.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="hover:bg-slate-50/50 transition-colors group"
+                    className={cn(
+                      "hover:bg-slate-50/50 transition-colors group",
+                      selectedIds.includes(item.id) && "bg-blue-50/30"
+                    )}
                   >
+                    <td className="px-6 py-4">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedIds.includes(item.id)}
+                        onChange={() => toggleSelectItem(item.id)}
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="font-bold text-slate-900">{item.penerima}</span>
