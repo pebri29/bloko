@@ -235,12 +235,6 @@ export const RekapIndikatorPage = () => {
               <BarChart 
                 data={kecamatanData} 
                 layout="vertical"
-                onClick={(data) => {
-                  const payload = data?.activePayload?.[0]?.payload;
-                  if (payload) {
-                    handleChartClick(payload, `Kecamatan: ${payload.name}`);
-                  }
-                }}
               >
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                 <XAxis type="number" hide />
@@ -258,7 +252,12 @@ export const RekapIndikatorPage = () => {
                 />
                 <Bar dataKey="total" radius={[0, 8, 8, 0]} barSize={20}>
                   {kecamatanData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[index % COLORS.length]} 
+                      onClick={() => handleChartClick(entry, `Kecamatan: ${entry.name}`)}
+                      className="cursor-pointer hover:opacity-80 transition-opacity"
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -318,12 +317,6 @@ export const RekapIndikatorPage = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={subKategoriData}
-                onClick={(data) => {
-                  const payload = data?.activePayload?.[0]?.payload;
-                  if (payload) {
-                    handleChartClick(payload, `Kategori: ${payload.name}`);
-                  }
-                }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis 
@@ -339,7 +332,12 @@ export const RekapIndikatorPage = () => {
                 />
                 <Bar dataKey="total" radius={[8, 8, 0, 0]} barSize={40}>
                   {subKategoriData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[index % COLORS.length]} 
+                      onClick={() => handleChartClick(entry, `Kategori: ${entry.name}`)}
+                      className="cursor-pointer hover:opacity-80 transition-opacity"
+                    />
                   ))}
                 </Bar>
               </BarChart>
