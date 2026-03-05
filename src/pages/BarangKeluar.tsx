@@ -83,7 +83,7 @@ export const BarangKeluar = () => {
   const KET_OPTIONS = {
     'Bencana Alam': ['Gempa Bumi', 'Letusan Gunung', 'Banjir', 'Tanah longsor', 'Angin Kencang', 'lainnya (sebutkan)'],
     'Bencana Non Alam': ['Kebakaran akibat korsleting listrik', 'kecelakaan industri', 'pencemaran lingkungan', 'wabah penyakit', 'lainnya (sebutkan)'],
-    'Sosial': ['anak telantar', 'lansia terlantar', 'disabilitas', 'gelandangan', 'ODGJ', 'fakir miskin', 'lainnya (sebutkan)']
+    'Sosial': ['orang telantar', 'lansia terlantar', 'disabilitas', 'gelandangan', 'ODGJ', 'fakir miskin', 'lainnya (sebutkan)']
   };
 
   const resetForm = () => {
