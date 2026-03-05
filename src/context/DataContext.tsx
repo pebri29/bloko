@@ -115,6 +115,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: doc.id,
         tanggal: (doc.data().tanggal as Timestamp).toDate()
       })) as LSData[]);
+    }, (error) => {
+      console.error('Error listening to LS list:', error);
     });
 
     const unsubMasuk = onSnapshot(query(collection(db, 'barangMasuk'), orderBy('tanggal', 'desc')), (snapshot) => {
@@ -123,6 +125,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: doc.id,
         tanggal: (doc.data().tanggal as Timestamp).toDate()
       })) as IncomingGoods[]);
+    }, (error) => {
+      console.error('Error listening to barang masuk:', error);
     });
 
     const unsubKeluar = onSnapshot(query(collection(db, 'barangKeluar'), orderBy('tanggal', 'desc')), (snapshot) => {
@@ -131,18 +135,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: doc.id,
         tanggal: (doc.data().tanggal as Timestamp).toDate()
       })) as OutgoingGoods[]);
+    }, (error) => {
+      console.error('Error listening to barang keluar:', error);
     });
 
     const unsubTargets = onSnapshot(doc(db, 'config', 'dpaTargets'), (doc) => {
       if (doc.exists()) {
         setDpaTargets(doc.data() as { sosial: number; bencana: number });
       }
+    }, (error) => {
+      console.error('Error listening to DPA targets:', error);
     });
 
     const unsubSettings = onSnapshot(doc(db, 'config', 'appSettings'), (doc) => {
       if (doc.exists()) {
         setSettings(doc.data() as AppSettings);
       }
+      setIsLoading(false);
+    }, (error) => {
+      console.error('Error listening to app settings:', error);
       setIsLoading(false);
     });
 

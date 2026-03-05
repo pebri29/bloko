@@ -131,7 +131,7 @@ export const BarangMasuk = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (modalMode === 'view') return;
 
@@ -151,14 +151,18 @@ export const BarangMasuk = () => {
       lsId: selectedLSId || undefined
     };
 
-    if (modalMode === 'add' || modalMode === 'pull') {
-      addBarangMasuk(data);
-    } else if (selectedId) {
-      updateBarangMasuk({ ...data, id: selectedId });
+    try {
+      if (modalMode === 'add' || modalMode === 'pull') {
+        await addBarangMasuk(data);
+      } else if (selectedId) {
+        await updateBarangMasuk({ ...data, id: selectedId });
+      }
+      setIsModalOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving barang masuk:', error);
+      alert('Gagal menyimpan data. Pastikan koneksi internet stabil dan Firebase sudah dikonfigurasi dengan benar.');
     }
-
-    setIsModalOpen(false);
-    resetForm();
   };
 
   const handleExportExcel = () => {

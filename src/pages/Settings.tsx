@@ -51,11 +51,16 @@ export const SettingsPage = () => {
     setFormData(prev => ({ ...prev, [field]: '' }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings(formData);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    try {
+      await updateSettings(formData);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      alert('Gagal memperbarui pengaturan.');
+    }
   };
 
   return (

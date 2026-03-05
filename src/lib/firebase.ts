@@ -10,5 +10,10 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// Log config status (without exposing keys)
+if (!firebaseConfig.apiKey) {
+  console.error('Firebase API Key is missing! Check your environment variables.');
+}
+
+const app = firebaseConfig.apiKey ? initializeApp(firebaseConfig) : {} as any;
+export const db = firebaseConfig.apiKey ? getFirestore(app) : {} as any;

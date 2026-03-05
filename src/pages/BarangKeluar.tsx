@@ -138,7 +138,7 @@ export const BarangKeluar = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (modalMode === 'view') return;
 
@@ -159,14 +159,18 @@ export const BarangKeluar = () => {
       keterangan
     };
 
-    if (modalMode === 'add') {
-      addBarangKeluar(data);
-    } else if (selectedId) {
-      updateBarangKeluar({ ...data, id: selectedId });
+    try {
+      if (modalMode === 'add') {
+        await addBarangKeluar(data);
+      } else if (selectedId) {
+        await updateBarangKeluar({ ...data, id: selectedId });
+      }
+      setIsModalOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving barang keluar:', error);
+      alert('Gagal menyimpan data. Pastikan koneksi internet stabil dan Firebase sudah dikonfigurasi dengan benar.');
     }
-
-    setIsModalOpen(false);
-    resetForm();
   };
 
   const handleExportExcel = () => {

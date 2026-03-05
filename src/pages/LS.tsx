@@ -124,7 +124,7 @@ export const LSPage = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (modalMode === 'view') return;
 
@@ -139,18 +139,22 @@ export const LSPage = () => {
       totalNet,
     };
 
-    if (modalMode === 'add') {
-      if (lsList.some(item => item.id === data.id)) {
-        alert('ID Permintaan sudah ada. Gunakan ID lain.');
-        return;
+    try {
+      if (modalMode === 'add') {
+        if (lsList.some(item => item.id === data.id)) {
+          alert('ID Permintaan sudah ada. Gunakan ID lain.');
+          return;
+        }
+        await addLS(data);
+      } else if (selectedId) {
+        await updateLS({ ...data, id: selectedId });
       }
-      addLS(data);
-    } else if (selectedId) {
-      updateLS({ ...data, id: selectedId });
+      setIsModalOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving LS:', error);
+      alert('Gagal menyimpan data. Pastikan koneksi internet stabil dan Firebase sudah dikonfigurasi dengan benar.');
     }
-
-    setIsModalOpen(false);
-    resetForm();
   };
 
   const handleExportExcel = () => {

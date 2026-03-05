@@ -80,9 +80,14 @@ export const LaporanPage = () => {
   const currentStockSosial = totalInSosial - totalOutSosial;
   const currentStockBencana = totalInBencana - totalOutBencana;
 
-  const handleSaveDPA = () => {
-    updateDPATargets(tempDPA);
-    setIsEditingDPA(false);
+  const handleSaveDPA = async () => {
+    try {
+      await updateDPATargets(tempDPA);
+      setIsEditingDPA(false);
+    } catch (error) {
+      console.error('Error updating DPA targets:', error);
+      alert('Gagal memperbarui target DPA.');
+    }
   };
 
   const loadImage = (url: string): Promise<HTMLImageElement> => {
