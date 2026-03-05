@@ -22,14 +22,8 @@ import { cn } from '../lib/utils';
 import jsPDF from 'jspdf';
 
 export const BeritaAcaraPage = () => {
-  const { barangKeluarList, settings, updateBarangKeluar, isLoading } = useData();
+  const { barangKeluarList, settings, isLoading } = useData();
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Edit Status State
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [editStatus, setEditStatus] = useState<'Selesai' | 'Belum Selesai'>('Belum Selesai');
-  const [editKeterangan, setEditKeterangan] = useState('');
 
   if (isLoading) {
     return (
@@ -47,30 +41,6 @@ export const BeritaAcaraPage = () => {
     item.nik.includes(searchTerm) ||
     item.kecamatan?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const handleEditStatus = (item: any) => {
-    setSelectedItem(item);
-    setEditStatus(item.status || 'Belum Selesai');
-    setEditKeterangan(item.keterangan || '');
-    setIsEditModalOpen(true);
-  };
-
-  const handleUpdateStatus = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedItem) return;
-
-    try {
-      await updateBarangKeluar({
-        ...selectedItem,
-        status: editStatus,
-        keterangan: editKeterangan
-      });
-      setIsEditModalOpen(false);
-    } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Gagal memperbarui status.');
-    }
-  };
 
   const loadImage = (url: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
@@ -254,8 +224,6 @@ export const BeritaAcaraPage = () => {
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tanggal</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Jenis</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Jumlah</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Keterangan</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
               </tr>
             </thead>
@@ -291,42 +259,20 @@ export const BeritaAcaraPage = () => {
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-slate-700">{item.jumlahPaket} Paket</p>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={cn(
-                        "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                        item.status === 'Selesai' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                      )}>
-                        {item.status || 'Belum Selesai'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-xs text-slate-500 line-clamp-1 max-w-[150px]">
-                        {item.status === 'Belum Selesai' ? (item.keterangan || '-') : '-'}
-                      </p>
-                    </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => handleEditStatus(item)}
-                          className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
-                          title="Ubah Status"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button 
-                          onClick={() => generateBAST(item)}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-900/10"
-                        >
-                          <Printer size={14} />
-                          Cetak BAST
-                        </button>
-                      </div>
+                      <button 
+                        onClick={() => generateBAST(item)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-900/10"
+                      >
+                        <Printer size={14} />
+                        Cetak BAST
+                      </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center">
+                  <td colSpan={5} className="px-6 py-20 text-center">
                     <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
                       <Search size={32} />
                     </div>
@@ -339,97 +285,6 @@ export const BeritaAcaraPage = () => {
           </table>
         </div>
       </GlassCard>
-
-      {/* Edit Status Modal */}
-      <AnimatePresence>
-        {isEditModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsEditModalOpen(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-white/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/50 overflow-hidden"
-            >
-              <div className="p-8">
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-2xl font-bold text-slate-900">Ubah Status</h2>
-                  <button 
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                  >
-                    <X size={24} className="text-slate-400" />
-                  </button>
-                </div>
-
-                <form onSubmit={handleUpdateStatus} className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                      <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">Penerima</p>
-                      <p className="text-lg font-bold text-slate-900">{selectedItem?.penerima}</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-1">Status Penyaluran</label>
-                      <div className="flex p-1 bg-slate-50 rounded-2xl border border-slate-100">
-                        {(['Selesai', 'Belum Selesai'] as const).map((s) => (
-                          <button
-                            key={s}
-                            type="button"
-                            onClick={() => setEditStatus(s)}
-                            className={cn(
-                              "flex-1 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2",
-                              editStatus === s ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"
-                            )}
-                          >
-                            {s === 'Selesai' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {editStatus === 'Belum Selesai' && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-700 ml-1">Keterangan / Alasan</label>
-                        <textarea 
-                          required
-                          placeholder="Sebutkan alasan mengapa penyaluran belum selesai..."
-                          value={editKeterangan}
-                          onChange={(e) => setEditKeterangan(e.target.value)}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all min-h-[100px]"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-4 pt-4">
-                    <button 
-                      type="button"
-                      onClick={() => setIsEditModalOpen(false)}
-                      className="flex-1 py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-all"
-                    >
-                      Batal
-                    </button>
-                    <button 
-                      type="submit"
-                      className="flex-1 py-4 bg-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-all active:scale-95"
-                    >
-                      Simpan Perubahan
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 };

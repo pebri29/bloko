@@ -18,7 +18,10 @@ import {
   Filter,
   ChevronDown,
   FileSpreadsheet,
-  FileText as FilePdf
+  FileText as FilePdf,
+  CheckCircle2,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
@@ -48,6 +51,12 @@ export const BarangKeluar = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
+  // Verification Modal State
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
+  const [selectedVerifyItem, setSelectedVerifyItem] = useState<any>(null);
+  const [verifyStatus, setVerifyStatus] = useState<'Selesai' | 'Belum Selesai'>('Belum Selesai');
+  const [verifyKeterangan, setVerifyKeterangan] = useState('');
+
   // Form State
   const [penerima, setPenerima] = useState('');
   const [nik, setNik] = useState('');
@@ -56,6 +65,7 @@ export const BarangKeluar = () => {
   const [jenis, setJenis] = useState<'Sosial' | 'Bencana'>('Sosial');
   const [jumlahPaket, setJumlahPaket] = useState('');
   const [tanggal, setTanggal] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [jenisPenyaluran, setJenisPenyaluran] = useState('');
   const [keterangan, setKeterangan] = useState('');
   const [status, setStatus] = useState<'Selesai' | 'Belum Selesai'>('Belum Selesai');
   
@@ -84,6 +94,7 @@ export const BarangKeluar = () => {
     setJenis('Sosial');
     setJumlahPaket('');
     setTanggal(format(new Date(), 'yyyy-MM-dd'));
+    setJenisPenyaluran('');
     setKeterangan('');
     setStatus('Belum Selesai');
     setKetLevel1('');
@@ -124,11 +135,13 @@ export const BarangKeluar = () => {
     setJenis(item.jenis);
     setJumlahPaket(item.jumlahPaket.toString());
     setTanggal(format(new Date(item.tanggal), 'yyyy-MM-dd'));
-    setKeterangan(item.keterangan);
+    setJenisPenyaluran(item.jenisPenyaluran || item.keterangan || '');
+    setKeterangan(item.status === 'Belum Selesai' ? item.keterangan : '');
     setStatus(item.status || 'Belum Selesai');
     
-    // Parse keterangan for nested dropdowns if possible
-    const parts = item.keterangan.split(' - ');
+    // Parse jenisPenyaluran for nested dropdowns if possible
+    const valToParse = item.jenisPenyaluran || item.keterangan || '';
+    const parts = valToParse.split(' - ');
     if (parts.length >= 2) {
       setKetLevel1(parts[0]);
       if (KET_OPTIONS[parts[0] as keyof typeof KET_OPTIONS]?.includes(parts[1])) {
@@ -159,9 +172,32 @@ export const BarangKeluar = () => {
     setJenis(item.jenis);
     setJumlahPaket(item.jumlahPaket.toString());
     setTanggal(format(new Date(item.tanggal), 'yyyy-MM-dd'));
-    setKeterangan(item.keterangan);
-    setStatus(item.status || 'Belum Selesai');
+    setJenisPenyaluran(item.jenisPenyaluran || item.keterangan || '');
     setIsModalOpen(true);
+  };
+
+  const handleVerifyClick = (item: any) => {
+    setSelectedVerifyItem(item);
+    setVerifyStatus(item.status || 'Belum Selesai');
+    setVerifyKeterangan(item.status === 'Belum Selesai' ? item.keterangan : '');
+    setIsVerifyModalOpen(true);
+  };
+
+  const handleUpdateStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVerifyItem) return;
+
+    try {
+      await updateBarangKeluar({
+        ...selectedVerifyItem,
+        status: verifyStatus,
+        keterangan: verifyStatus === 'Belum Selesai' ? verifyKeterangan : ''
+      });
+      setIsVerifyModalOpen(false);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Gagal memperbarui status.');
+    }
   };
 
   const handleDeleteClick = (id: string) => {
@@ -191,17 +227,17 @@ export const BarangKeluar = () => {
       return;
     }
 
-    let finalKeterangan = '';
+    let finalJenisPenyaluran = '';
     if (ketLevel1) {
-      finalKeterangan = ketLevel1;
+      finalJenisPenyaluran = ketLevel1;
       if (ketLevel2) {
-        finalKeterangan += ` - ${ketLevel2}`;
+        finalJenisPenyaluran += ` - ${ketLevel2}`;
         if (ketLevel2 === 'lainnya (sebutkan)' && ketLainnya) {
-          finalKeterangan += ` - ${ketLainnya}`;
+          finalJenisPenyaluran += ` - ${ketLainnya}`;
         }
       }
     } else {
-      finalKeterangan = ketLainnya;
+      finalJenisPenyaluran = ketLainnya;
     }
 
     const data = {
@@ -212,15 +248,21 @@ export const BarangKeluar = () => {
       kecamatan,
       jenis,
       jumlahPaket: qty,
-      keterangan: finalKeterangan,
-      status
+      jenisPenyaluran: finalJenisPenyaluran,
     };
 
     try {
       if (modalMode === 'add') {
-        await addBarangKeluar(data);
+        await addBarangKeluar({ ...data, status: 'Belum Selesai', keterangan: '' });
       } else if (selectedId) {
-        await updateBarangKeluar({ ...data, id: selectedId });
+        // Keep existing status and keterangan when editing other fields
+        const existing = barangKeluarList.find(i => i.id === selectedId);
+        await updateBarangKeluar({ 
+          ...data, 
+          id: selectedId, 
+          status: existing?.status || 'Belum Selesai',
+          keterangan: existing?.keterangan || ''
+        });
       }
       setIsModalOpen(false);
       resetForm();
@@ -240,20 +282,22 @@ export const BarangKeluar = () => {
       'Kecamatan': item.kecamatan || '-',
       'Jenis': item.jenis === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)',
       'Jumlah Paket': item.jumlahPaket,
-      'Keterangan': item.keterangan || '-'
+      'Jenis Penyaluran': item.jenisPenyaluran || item.keterangan || '-',
+      'Keterangan Status': item.keterangan || '-'
     }));
     exportToExcel(data, 'Data_Barang_Keluar', 'BarangKeluar');
   };
 
   const handleExportPDF = () => {
-    const headers = [['Tanggal', 'Penerima', 'Kecamatan', 'Jumlah', 'Jenis', 'Keterangan']];
+    const headers = [['Tanggal', 'Penerima', 'Kecamatan', 'Jumlah', 'Jenis', 'Jenis Penyaluran', 'Status']];
     const data = barangKeluarList.map(item => [
       format(new Date(item.tanggal), 'dd/MM/yyyy'),
       item.penerima,
       item.kecamatan || '-',
       `${item.jumlahPaket} Pkt`,
       item.jenis === 'Sosial' ? 'Sosial (Fasilitasi)' : 'Bencana (Penyedia Makanan)',
-      item.keterangan || '-'
+      item.jenisPenyaluran || item.keterangan || '-',
+      item.status || 'Belum Selesai'
     ]);
     exportToPDF('Laporan Barang Keluar', headers, data, 'Laporan_Barang_Keluar');
   };
@@ -343,15 +387,16 @@ export const BarangKeluar = () => {
               <tr className="border-b border-slate-100">
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Penerima</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Jenis & Jumlah</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Keterangan</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Jenis Penyaluran</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Tanggal</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
                     Tidak ada data barang keluar.
                   </td>
                 </tr>
@@ -381,16 +426,38 @@ export const BarangKeluar = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-slate-600 line-clamp-1">{item.keterangan || '-'}</span>
+                      <span className="text-sm text-slate-600 line-clamp-1">{item.jenisPenyaluran || item.keterangan || '-'}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-sm text-slate-600">
                         <Calendar size={14} className="text-slate-400" />
-                        {format(item.tanggal, 'dd MMM yyyy')}
+                        {format(new Date(item.tanggal), 'dd MMM yyyy')}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1">
+                        <span className={cn(
+                          "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider w-fit",
+                          item.status === 'Selesai' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                        )}>
+                          {item.status || 'Belum Selesai'}
+                        </span>
+                        {item.status === 'Belum Selesai' && item.keterangan && (
+                          <span className="text-[10px] text-slate-400 italic line-clamp-1 max-w-[120px]">
+                            {item.keterangan}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleVerifyClick(item)}
+                          className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all" 
+                          title="Verifikasi Status"
+                        >
+                          <CheckCircle size={18} />
+                        </button>
                         <button 
                           onClick={() => handleViewClick(item)}
                           className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all" 
@@ -596,32 +663,11 @@ export const BarangKeluar = () => {
                       )}
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-1">Status Penyaluran</label>
-                      <div className="flex p-1 bg-slate-50 rounded-2xl border border-slate-100">
-                        {(['Selesai', 'Belum Selesai'] as const).map((s) => (
-                          <button
-                            key={s}
-                            type="button"
-                            disabled={modalMode === 'view'}
-                            onClick={() => setStatus(s)}
-                            className={cn(
-                              "flex-1 py-2 rounded-xl text-sm font-bold transition-all",
-                              status === s ? "bg-white text-blue-600 shadow-sm" : "text-slate-400",
-                              modalMode === 'view' && "cursor-default"
-                            )}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
                     {/* Nested Keterangan Dropdown */}
                     <div className="space-y-4 md:col-span-2 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
                       <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                         <FileText size={16} className="text-blue-500" />
-                        Keterangan Bertingkat
+                        Jenis Penyaluran (Bertingkat)
                       </h3>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -720,6 +766,97 @@ export const BarangKeluar = () => {
         title="Hapus Data Pengeluaran"
         message="Apakah Anda yakin ingin menghapus data pengeluaran ini? Tindakan ini tidak dapat dibatalkan."
       />
+
+      {/* Verification Status Modal */}
+      <AnimatePresence>
+        {isVerifyModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsVerifyModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-white/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/50 overflow-hidden"
+            >
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-2xl font-bold text-slate-900">Verifikasi Status</h2>
+                  <button 
+                    onClick={() => setIsVerifyModalOpen(false)}
+                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                  >
+                    <X size={24} className="text-slate-400" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleUpdateStatus} className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                      <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">Penerima</p>
+                      <p className="text-lg font-bold text-slate-900">{selectedVerifyItem?.penerima}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Status Penyaluran</label>
+                      <div className="flex p-1 bg-slate-50 rounded-2xl border border-slate-100">
+                        {(['Selesai', 'Belum Selesai'] as const).map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setVerifyStatus(s)}
+                            className={cn(
+                              "flex-1 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2",
+                              verifyStatus === s ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"
+                            )}
+                          >
+                            {s === 'Selesai' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {verifyStatus === 'Belum Selesai' && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Keterangan / Alasan</label>
+                        <textarea 
+                          required
+                          placeholder="Sebutkan alasan mengapa penyaluran belum selesai..."
+                          value={verifyKeterangan}
+                          onChange={(e) => setVerifyKeterangan(e.target.value)}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all min-h-[100px]"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button 
+                      type="button"
+                      onClick={() => setIsVerifyModalOpen(false)}
+                      className="flex-1 py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-all"
+                    >
+                      Batal
+                    </button>
+                    <button 
+                      type="submit"
+                      className="flex-1 py-4 bg-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-all active:scale-95"
+                    >
+                      Simpan Perubahan
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

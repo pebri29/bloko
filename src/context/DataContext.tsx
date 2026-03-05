@@ -45,6 +45,7 @@ interface OutgoingGoods {
   kecamatan?: string;
   jenis: 'Sosial' | 'Bencana';
   jumlahPaket: number;
+  jenisPenyaluran: string;
   keterangan: string;
   status?: 'Selesai' | 'Belum Selesai';
   lsId?: string;

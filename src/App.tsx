@@ -9,6 +9,7 @@ import { RiwayatPage } from './pages/Riwayat';
 import { LaporanPage } from './pages/Laporan';
 import { SettingsPage } from './pages/Settings';
 import { BeritaAcaraPage } from './pages/BeritaAcara';
+import { RekapIndikatorPage } from './pages/RekapIndikator';
 import { AnimatePresence } from 'motion/react';
 
 const Placeholder = ({ title }: { title: string }) => (
@@ -42,6 +43,7 @@ export default function App() {
               <Route path="/berita-acara" element={<BeritaAcaraPage />} />
               <Route path="/masuk" element={<BarangMasuk />} />
               <Route path="/opname" element={<RiwayatPage />} />
+              <Route path="/rekap" element={<RekapIndikatorPage />} />
               <Route path="/laporan" element={<LaporanPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Routes>
