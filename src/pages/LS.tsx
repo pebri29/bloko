@@ -301,7 +301,7 @@ export const LSPage = () => {
                           {formatCurrency(item.totalNet)}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center justify-end gap-1">
                             <button 
                               onClick={() => handleViewClick(item)}
                               className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all" 

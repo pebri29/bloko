@@ -12,7 +12,7 @@ import {
   Settings
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useData } from '../context/DataContext';
 
 const menuItems = [
@@ -28,6 +28,7 @@ const menuItems = [
 
 export const Sidebar = () => {
   const { settings } = useData();
+  const [isLogoHovered, setIsLogoHovered] = React.useState(false);
 
   return (
     <motion.div 
@@ -36,12 +37,45 @@ export const Sidebar = () => {
       className="fixed bottom-0 left-0 right-0 lg:left-6 lg:top-1/2 lg:-translate-y-1/2 lg:bottom-auto lg:right-auto z-50 p-4 lg:p-0"
     >
       <div className="bg-white/80 backdrop-blur-2xl border border-white/40 rounded-[2rem] lg:rounded-[2.5rem] p-2 lg:p-3 shadow-2xl flex flex-row lg:flex-col items-center justify-around lg:justify-start gap-2 lg:gap-4 max-w-md mx-auto lg:max-w-none">
-        <div className="hidden lg:flex w-12 h-12 bg-blue-500 rounded-2xl items-center justify-center mb-4 shadow-lg shadow-blue-500/30 overflow-hidden shrink-0">
-          {settings.appLogo ? (
-            <img src={settings.appLogo} alt="Logo" className="w-full h-full object-contain p-2" />
-          ) : (
-            <span className="text-white font-bold text-xl">{settings.appName.charAt(0)}</span>
-          )}
+        <div 
+          className="hidden lg:flex relative"
+          onMouseEnter={() => setIsLogoHovered(true)}
+          onMouseLeave={() => setIsLogoHovered(false)}
+        >
+          <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30 overflow-hidden shrink-0 cursor-pointer transition-transform duration-500 hover:rotate-12 hover:scale-110">
+            {settings.appLogo ? (
+              <img src={settings.appLogo} alt="Logo" className="w-full h-full object-contain p-2" />
+            ) : (
+              <span className="text-white font-bold text-xl">{settings.appName.charAt(0)}</span>
+            )}
+          </div>
+
+          <AnimatePresence>
+            {isLogoHovered && (
+              <motion.div
+                initial={{ opacity: 0, x: 20, scale: 0.8, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, x: 64, scale: 1, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, x: 20, scale: 0.8, filter: 'blur(10px)' }}
+                className="absolute left-0 top-0 bg-white/90 backdrop-blur-xl border border-white/40 p-5 rounded-[2rem] shadow-2xl pointer-events-none z-[60] min-w-[240px] flex flex-col gap-1"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <h2 className="text-blue-600 font-black text-2xl leading-none tracking-tighter">{settings.appName}</h2>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-1 line-clamp-2">{settings.appSubtitle}</p>
+                </motion.div>
+                <div className="absolute -left-2 top-6 w-4 h-4 bg-white/90 border-l border-t border-white/40 rotate-45 -z-10" />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         
         {menuItems.map((item) => (

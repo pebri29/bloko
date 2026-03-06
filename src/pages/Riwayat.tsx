@@ -10,7 +10,11 @@ import {
   ChevronRight,
   ChevronDown,
   Package,
-  Truck
+  Truck,
+  X,
+  User,
+  MapPin,
+  Info
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
@@ -31,6 +35,8 @@ export const RiwayatPage = () => {
   const { lsList, barangMasukList, barangKeluarList, isLoading } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedLS, setExpandedLS] = useState<string | null>(null);
+  const [selectedViewItem, setSelectedViewItem] = useState<any>(null);
+  const [viewType, setViewType] = useState<'Masuk' | 'Keluar' | null>(null);
 
   if (isLoading) {
     return (
@@ -179,8 +185,8 @@ export const RiwayatPage = () => {
                         </div>
                       </div>
                       <div className={cn(
-                        "p-2 rounded-xl transition-colors",
-                        isExpanded ? "bg-blue-50 text-blue-500" : "text-slate-400 group-hover:bg-slate-50"
+                        "p-2 rounded-xl transition-colors bg-slate-50",
+                        isExpanded ? "bg-blue-50 text-blue-500" : "text-slate-400"
                       )}>
                         {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                       </div>
@@ -249,8 +255,17 @@ export const RiwayatPage = () => {
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest px-2">Barang Masuk Umum</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {manualMasuk.map(item => (
-                    <div key={item.id}>
-                      <GlassCard className="p-4 flex items-center gap-4">
+                    <motion.div 
+                      key={item.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        setSelectedViewItem(item);
+                        setViewType('Masuk');
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <GlassCard className="p-4 flex items-center gap-4 hover:border-blue-500/50 transition-all">
                         <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center">
                           <ArrowDownCircle size={20} />
                         </div>
@@ -259,7 +274,7 @@ export const RiwayatPage = () => {
                           <p className="text-xs text-slate-500">{format(new Date(item.tanggal), 'dd MMM yyyy')} • {item.jumlahPaket} Paket</p>
                         </div>
                       </GlassCard>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -270,8 +285,17 @@ export const RiwayatPage = () => {
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest px-2">Barang Keluar Umum</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {manualKeluar.map(item => (
-                    <div key={item.id}>
-                      <GlassCard className="p-4 flex items-center gap-4">
+                    <motion.div 
+                      key={item.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        setSelectedViewItem(item);
+                        setViewType('Keluar');
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <GlassCard className="p-4 flex items-center gap-4 hover:border-blue-500/50 transition-all">
                         <div className="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center">
                           <ArrowUpCircle size={20} />
                         </div>
@@ -280,13 +304,133 @@ export const RiwayatPage = () => {
                           <p className="text-xs text-slate-500">{format(new Date(item.tanggal), 'dd MMM yyyy')} • {item.jumlahPaket} Paket</p>
                         </div>
                       </GlassCard>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
             )}
           </div>
         )}
+
+        {/* View Modal */}
+        <AnimatePresence>
+          {selectedViewItem && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedViewItem(null)}
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+              >
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                      <div className={cn(
+                        "w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg",
+                        viewType === 'Masuk' ? "bg-blue-500 text-white shadow-blue-500/20" : "bg-emerald-500 text-white shadow-emerald-500/20"
+                      )}>
+                        {viewType === 'Masuk' ? <ArrowDownCircle size={28} /> : <ArrowUpCircle size={28} />}
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Detail {viewType}</h2>
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Informasi Lengkap</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedViewItem(null)}
+                      className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tanggal</p>
+                        <div className="flex items-center gap-2 text-slate-900 font-bold">
+                          <Calendar size={16} className="text-blue-500" />
+                          {format(new Date(selectedViewItem.tanggal), 'dd MMMM yyyy')}
+                        </div>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Jumlah</p>
+                        <div className="flex items-center gap-2 text-slate-900 font-bold">
+                          <Package size={16} className="text-blue-500" />
+                          {selectedViewItem.jumlahPaket} Paket
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
+                          <User size={20} className="text-blue-500" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                            {viewType === 'Masuk' ? 'Suplier' : 'Penerima'}
+                          </p>
+                          <h3 className="text-lg font-bold text-slate-900">
+                            {viewType === 'Masuk' ? selectedViewItem.suplier : selectedViewItem.penerima}
+                          </h3>
+                          {viewType === 'Keluar' && (
+                            <p className="text-sm font-medium text-slate-500 mt-0.5">NIK: {selectedViewItem.nik}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {viewType === 'Keluar' && (
+                        <div className="flex items-start gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
+                            <MapPin size={20} className="text-blue-500" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Alamat & Kecamatan</p>
+                            <p className="text-sm font-bold text-slate-900">{selectedViewItem.alamat}</p>
+                            <p className="text-xs font-medium text-slate-500">Kec. {selectedViewItem.kecamatan || '-'}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
+                          <Info size={20} className="text-blue-500" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Keterangan / Penyaluran</p>
+                          <p className="text-sm font-bold text-slate-900">
+                            {viewType === 'Masuk' ? (selectedViewItem.status || 'Diterima') : (selectedViewItem.jenisPenyaluran || selectedViewItem.keterangan || '-')}
+                          </p>
+                          <span className={cn(
+                            "inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                            selectedViewItem.jenis === 'Sosial' ? "bg-blue-100 text-blue-600" : "bg-amber-100 text-amber-600"
+                          )}>
+                            {selectedViewItem.jenis}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setSelectedViewItem(null)}
+                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-xl shadow-slate-900/20 hover:bg-slate-800 transition-all active:scale-95"
+                    >
+                      Tutup Detail
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );
