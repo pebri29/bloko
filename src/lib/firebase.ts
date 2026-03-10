@@ -11,9 +11,16 @@ const firebaseConfig = {
 };
 
 // Log config status (without exposing keys)
-if (!firebaseConfig.apiKey) {
-  console.error('Firebase API Key is missing! Check your environment variables.');
+const missingVars = Object.entries(firebaseConfig)
+  .filter(([_, value]) => !value)
+  .map(([key]) => `VITE_FIREBASE_${key.replace(/[A-Z]/g, letter => `_${letter}`).toUpperCase()}`);
+
+if (missingVars.length > 0) {
+  console.error('Missing Firebase Environment Variables:', missingVars.join(', '));
+  console.warn('Make sure you have set these in the AI Studio Settings menu.');
+} else {
+  console.log('Firebase Project ID being used:', firebaseConfig.projectId);
 }
 
-const app = firebaseConfig.apiKey ? initializeApp(firebaseConfig) : {} as any;
-export const db = firebaseConfig.apiKey ? getFirestore(app) : {} as any;
+const app = firebaseConfig.apiKey ? initializeApp(firebaseConfig) : null;
+export const db = app ? getFirestore(app) : ({} as any);

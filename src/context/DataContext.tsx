@@ -119,6 +119,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })) as LSData[]);
     }, (error) => {
       console.error('Error listening to LS list:', error);
+      if (error.code === 'permission-denied') {
+        console.error('Firestore Permission Denied: Check your security rules.');
+      }
     });
 
     const unsubMasuk = onSnapshot(query(collection(db, 'barangMasuk'), orderBy('tanggal', 'desc')), (snapshot) => {
@@ -157,6 +160,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }, (error) => {
       console.error('Error listening to app settings:', error);
+      if (error.code === 'permission-denied') {
+        console.error('Firestore Permission Denied: Check your security rules.');
+      }
       setIsLoading(false);
     });
 
@@ -182,45 +188,100 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const addLS = async (data: LSData) => {
-    const { id, ...rest } = data;
-    await setDoc(doc(db, 'lsList', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
+    try {
+      const { id, ...rest } = data;
+      await setDoc(doc(db, 'lsList', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
+    } catch (error) {
+      console.error('Error adding LS:', error);
+      throw error;
+    }
   };
   const deleteLS = async (id: string) => {
-    await deleteDoc(doc(db, 'lsList', id));
+    try {
+      await deleteDoc(doc(db, 'lsList', id));
+    } catch (error) {
+      console.error('Error deleting LS:', error);
+      throw error;
+    }
   };
   const updateLS = async (data: LSData) => {
-    const { id, ...rest } = data;
-    await setDoc(doc(db, 'lsList', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
+    try {
+      const { id, ...rest } = data;
+      await setDoc(doc(db, 'lsList', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
+    } catch (error) {
+      console.error('Error updating LS:', error);
+      throw error;
+    }
   };
 
   const addBarangMasuk = async (data: Omit<IncomingGoods, 'id'>) => {
-    await addDoc(collection(db, 'barangMasuk'), { ...data, tanggal: Timestamp.fromDate(data.tanggal) });
+    try {
+      await addDoc(collection(db, 'barangMasuk'), { ...data, tanggal: Timestamp.fromDate(data.tanggal) });
+    } catch (error) {
+      console.error('Error adding barang masuk:', error);
+      throw error;
+    }
   };
   const deleteBarangMasuk = async (id: string) => {
-    await deleteDoc(doc(db, 'barangMasuk', id));
+    try {
+      await deleteDoc(doc(db, 'barangMasuk', id));
+    } catch (error) {
+      console.error('Error deleting barang masuk:', error);
+      throw error;
+    }
   };
   const updateBarangMasuk = async (data: IncomingGoods) => {
-    const { id, ...rest } = data;
-    await updateDoc(doc(db, 'barangMasuk', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
+    try {
+      const { id, ...rest } = data;
+      await updateDoc(doc(db, 'barangMasuk', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
+    } catch (error) {
+      console.error('Error updating barang masuk:', error);
+      throw error;
+    }
   };
 
   const addBarangKeluar = async (data: Omit<OutgoingGoods, 'id'>) => {
-    await addDoc(collection(db, 'barangKeluar'), { ...data, tanggal: Timestamp.fromDate(data.tanggal) });
+    try {
+      await addDoc(collection(db, 'barangKeluar'), { ...data, tanggal: Timestamp.fromDate(data.tanggal) });
+    } catch (error) {
+      console.error('Error adding barang keluar:', error);
+      throw error;
+    }
   };
   const deleteBarangKeluar = async (id: string) => {
-    await deleteDoc(doc(db, 'barangKeluar', id));
+    try {
+      await deleteDoc(doc(db, 'barangKeluar', id));
+    } catch (error) {
+      console.error('Error deleting barang keluar:', error);
+      throw error;
+    }
   };
   const updateBarangKeluar = async (data: OutgoingGoods) => {
-    const { id, ...rest } = data;
-    await updateDoc(doc(db, 'barangKeluar', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
+    try {
+      const { id, ...rest } = data;
+      await updateDoc(doc(db, 'barangKeluar', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
+    } catch (error) {
+      console.error('Error updating barang keluar:', error);
+      throw error;
+    }
   };
 
   const updateDPATargets = async (targets: { sosial: number; bencana: number }) => {
-    await setDoc(doc(db, 'config', 'dpaTargets'), targets);
+    try {
+      await setDoc(doc(db, 'config', 'dpaTargets'), targets);
+    } catch (error) {
+      console.error('Error updating DPA targets:', error);
+      throw error;
+    }
   };
 
   const updateSettings = async (newSettings: AppSettings) => {
-    await setDoc(doc(db, 'config', 'appSettings'), newSettings);
+    try {
+      await setDoc(doc(db, 'config', 'appSettings'), newSettings);
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      throw error;
+    }
   };
 
   return (
