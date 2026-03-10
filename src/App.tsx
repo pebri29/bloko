@@ -11,6 +11,7 @@ import { SettingsPage } from './pages/Settings';
 import { BeritaAcaraPage } from './pages/BeritaAcara';
 import { RekapIndikatorPage } from './pages/RekapIndikator';
 import { PermohonanMobile } from './pages/PermohonanMobile';
+import { useData } from './context/DataContext';
 import { AnimatePresence } from 'motion/react';
 
 const Placeholder = ({ title }: { title: string }) => (
@@ -22,7 +23,10 @@ const Placeholder = ({ title }: { title: string }) => (
 
 export default function App() {
   const location = useLocation();
+  const { isFirebaseConnected } = useData();
   const isMobileForm = location.pathname === '/permohonan';
+
+  const isConfigMissing = !import.meta.env.VITE_FIREBASE_API_KEY || !import.meta.env.VITE_FIREBASE_PROJECT_ID;
 
   if (isMobileForm) {
     return (
@@ -36,6 +40,18 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F2F2F7] font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-600">
+      {/* Configuration Warning */}
+      {isConfigMissing && (
+        <div className="fixed top-0 left-0 right-0 z-[200] bg-rose-500 text-white py-2 px-4 text-center text-xs font-bold animate-pulse">
+          ⚠️ Konfigurasi Firebase belum lengkap! Silakan isi API Key dan Project ID di menu Settings AI Studio.
+        </div>
+      )}
+      
+      {!isConfigMissing && !isFirebaseConnected && (
+        <div className="fixed top-0 left-0 right-0 z-[200] bg-amber-500 text-white py-2 px-4 text-center text-xs font-bold">
+          ⚠️ Menghubungkan ke Firebase... Jika ini berlangsung lama, periksa koneksi internet atau Firestore Rules.
+        </div>
+      )}
       {/* Background Decorative Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-200/30 blur-[120px] rounded-full" />

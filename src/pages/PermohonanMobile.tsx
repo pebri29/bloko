@@ -75,9 +75,13 @@ export const PermohonanMobile = () => {
     try {
       await addBarangKeluar(data);
       setIsSubmitted(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting request:', error);
-      alert('Gagal mengirim permohonan. Silakan coba lagi.');
+      if (error.code === 'permission-denied') {
+        alert('Gagal mengirim: Izin ditolak. Periksa Firestore Rules.');
+      } else {
+        alert(`Gagal mengirim permohonan: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }

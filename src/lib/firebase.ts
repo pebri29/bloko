@@ -23,4 +23,13 @@ if (missingVars.length > 0) {
 }
 
 const app = firebaseConfig.apiKey ? initializeApp(firebaseConfig) : null;
-export const db = app ? getFirestore(app) : ({} as any);
+
+if (!app) {
+  console.error('Firebase App failed to initialize. Check your API Key.');
+}
+
+export const db = app ? getFirestore(app) : null;
+
+if (app && !db) {
+  console.error('Firestore failed to initialize. Check if Firestore is enabled in your Firebase Console.');
+}

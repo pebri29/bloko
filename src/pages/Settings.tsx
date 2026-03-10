@@ -12,15 +12,26 @@ import {
   CheckCircle2,
   Trash2,
   Building2,
-  Briefcase
+  Briefcase,
+  Database,
+  AlertCircle,
+  CheckCircle,
+  ExternalLink
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { cn } from '../lib/utils';
 
 export const SettingsPage = () => {
-  const { settings, updateSettings, isLoading } = useData();
+  const { settings, updateSettings, isLoading, isFirebaseConnected } = useData();
   const [formData, setFormData] = useState(settings);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const firebaseConfig = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  };
+
+  const isConfigComplete = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
 
   if (isLoading) {
     return (
@@ -57,9 +68,13 @@ export const SettingsPage = () => {
       await updateSettings(formData);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating settings:', error);
-      alert('Gagal memperbarui pengaturan.');
+      if (error.code === 'permission-denied') {
+        alert('Gagal memperbarui: Izin ditolak. Periksa Firestore Rules.');
+      } else {
+        alert(`Gagal memperbarui pengaturan: ${error.message}`);
+      }
     }
   };
 
@@ -70,6 +85,68 @@ export const SettingsPage = () => {
       exit={{ opacity: 0, y: -20 }}
       className="max-w-4xl mx-auto space-y-8"
     >
+      {/* Firebase Status Card */}
+      <GlassCard className="p-6 border-l-4 border-l-blue-500">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className={cn(
+              "w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg",
+              isFirebaseConnected ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-amber-500 text-white shadow-amber-500/20"
+            )}>
+              <Database size={24} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                Status Koneksi Firebase
+                {isFirebaseConnected ? (
+                  <span className="flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                    <CheckCircle size={10} /> Terhubung
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-[10px] bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                    <AlertCircle size={10} /> Terputus
+                  </span>
+                )}
+              </h3>
+              <p className="text-sm text-slate-500 mt-1">
+                {isConfigComplete 
+                  ? `Menggunakan Project ID: ${firebaseConfig.projectId}` 
+                  : 'Konfigurasi Firebase belum lengkap. Silakan atur di menu Settings AI Studio.'}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap gap-3">
+            <a 
+              href="https://console.firebase.google.com/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-2"
+            >
+              <ExternalLink size={14} /> Firebase Console
+            </a>
+            {!isFirebaseConnected && (
+              <div className="px-4 py-2 bg-amber-50 text-amber-700 rounded-xl text-[10px] font-bold uppercase tracking-wider border border-amber-100 flex items-center gap-2">
+                <AlertCircle size={14} /> Cek Firestore Rules
+              </div>
+            )}
+          </div>
+        </div>
+
+        {!isFirebaseConnected && isConfigComplete && (
+          <div className="mt-6 p-4 bg-amber-50/50 rounded-2xl border border-amber-100 text-sm text-amber-800">
+            <p className="font-bold mb-2 flex items-center gap-2">
+              <AlertCircle size={16} /> Troubleshooting:
+            </p>
+            <ul className="list-disc list-inside space-y-1 ml-2 text-xs font-medium opacity-80">
+              <li>Pastikan <b>Project ID</b> sudah benar (cek di Firebase Console).</li>
+              <li>Pastikan <b>Firestore Database</b> sudah dibuat di Firebase Console.</li>
+              <li>Pastikan <b>Firestore Rules</b> diatur ke: <code className="bg-white px-1 rounded">allow read, write: if true;</code> (untuk testing).</li>
+              <li>Refresh halaman ini setelah melakukan perubahan.</li>
+            </ul>
+          </div>
+        )}
+      </GlassCard>
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900">Pengaturan</h1>

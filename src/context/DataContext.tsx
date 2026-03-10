@@ -80,6 +80,7 @@ interface DataContextType {
   settings: AppSettings;
   updateSettings: (settings: AppSettings) => Promise<void>;
   isLoading: boolean;
+  isFirebaseConnected: boolean;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -102,14 +103,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [dpaTargets, setDpaTargets] = useState({ sosial: 5000, bencana: 2000 });
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
 
   useEffect(() => {
     // Check if Firebase is configured
-    if (!import.meta.env.VITE_FIREBASE_API_KEY) {
-      console.warn('Firebase API Key is missing. Real-time sync will not work.');
+    if (!db) {
+      console.warn('Firestore is not initialized. Real-time sync will not work.');
       setIsLoading(false);
+      setIsFirebaseConnected(false);
       return;
     }
+
+    setIsFirebaseConnected(true);
 
     const unsubLS = onSnapshot(query(collection(db, 'lsList'), orderBy('tanggal', 'desc')), (snapshot) => {
       setLsList(snapshot.docs.map(doc => ({
@@ -188,6 +193,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const addLS = async (data: LSData) => {
+    if (!db) throw new Error('Database not connected');
     try {
       const { id, ...rest } = data;
       await setDoc(doc(db, 'lsList', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
@@ -197,6 +203,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   const deleteLS = async (id: string) => {
+    if (!db) throw new Error('Database not connected');
     try {
       await deleteDoc(doc(db, 'lsList', id));
     } catch (error) {
@@ -205,6 +212,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   const updateLS = async (data: LSData) => {
+    if (!db) throw new Error('Database not connected');
     try {
       const { id, ...rest } = data;
       await setDoc(doc(db, 'lsList', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
@@ -215,6 +223,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addBarangMasuk = async (data: Omit<IncomingGoods, 'id'>) => {
+    if (!db) throw new Error('Database not connected');
     try {
       await addDoc(collection(db, 'barangMasuk'), { ...data, tanggal: Timestamp.fromDate(data.tanggal) });
     } catch (error) {
@@ -223,6 +232,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   const deleteBarangMasuk = async (id: string) => {
+    if (!db) throw new Error('Database not connected');
     try {
       await deleteDoc(doc(db, 'barangMasuk', id));
     } catch (error) {
@@ -231,6 +241,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   const updateBarangMasuk = async (data: IncomingGoods) => {
+    if (!db) throw new Error('Database not connected');
     try {
       const { id, ...rest } = data;
       await updateDoc(doc(db, 'barangMasuk', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
@@ -241,6 +252,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addBarangKeluar = async (data: Omit<OutgoingGoods, 'id'>) => {
+    if (!db) throw new Error('Database not connected');
     try {
       await addDoc(collection(db, 'barangKeluar'), { ...data, tanggal: Timestamp.fromDate(data.tanggal) });
     } catch (error) {
@@ -249,6 +261,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   const deleteBarangKeluar = async (id: string) => {
+    if (!db) throw new Error('Database not connected');
     try {
       await deleteDoc(doc(db, 'barangKeluar', id));
     } catch (error) {
@@ -257,6 +270,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   const updateBarangKeluar = async (data: OutgoingGoods) => {
+    if (!db) throw new Error('Database not connected');
     try {
       const { id, ...rest } = data;
       await updateDoc(doc(db, 'barangKeluar', id), { ...rest, tanggal: Timestamp.fromDate(data.tanggal) });
@@ -267,6 +281,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateDPATargets = async (targets: { sosial: number; bencana: number }) => {
+    if (!db) throw new Error('Database not connected');
     try {
       await setDoc(doc(db, 'config', 'dpaTargets'), targets);
     } catch (error) {
@@ -276,6 +291,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateSettings = async (newSettings: AppSettings) => {
+    if (!db) throw new Error('Database not connected');
     try {
       await setDoc(doc(db, 'config', 'appSettings'), newSettings);
     } catch (error) {
@@ -291,7 +307,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       barangKeluarList, addBarangKeluar, deleteBarangKeluar, updateBarangKeluar,
       dpaTargets, updateDPATargets,
       settings, updateSettings,
-      isLoading
+      isLoading,
+      isFirebaseConnected
     }}>
       {children}
     </DataContext.Provider>

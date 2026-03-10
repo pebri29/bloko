@@ -27,7 +27,7 @@ const menuItems = [
 ];
 
 export const Sidebar = () => {
-  const { settings } = useData();
+  const { settings, isFirebaseConnected } = useData();
   const [isLogoHovered, setIsLogoHovered] = React.useState(false);
 
   return (
@@ -42,12 +42,18 @@ export const Sidebar = () => {
           onMouseEnter={() => setIsLogoHovered(true)}
           onMouseLeave={() => setIsLogoHovered(false)}
         >
-          <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30 overflow-hidden shrink-0 cursor-pointer transition-transform duration-500 hover:rotate-12 hover:scale-110">
+          <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30 overflow-hidden shrink-0 cursor-pointer transition-transform duration-500 hover:rotate-12 hover:scale-110 relative">
             {settings.appLogo ? (
               <img src={settings.appLogo} alt="Logo" className="w-full h-full object-contain p-2" />
             ) : (
               <span className="text-white font-bold text-xl">{settings.appName.charAt(0)}</span>
             )}
+            
+            {/* Connection Status Dot */}
+            <div className={cn(
+              "absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-white",
+              isFirebaseConnected ? "bg-emerald-500" : "bg-rose-500"
+            )} />
           </div>
 
           <AnimatePresence>
@@ -71,6 +77,21 @@ export const Sidebar = () => {
                   transition={{ delay: 0.2 }}
                 >
                   <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-1 line-clamp-2">{settings.appSubtitle}</p>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2"
+                >
+                  <div className={cn(
+                    "w-2 h-2 rounded-full",
+                    isFirebaseConnected ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+                  )} />
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    {isFirebaseConnected ? 'Firebase Terhubung' : 'Firebase Terputus'}
+                  </span>
                 </motion.div>
                 <div className="absolute -left-2 top-6 w-4 h-4 bg-white/90 border-l border-t border-white/40 rotate-45 -z-10" />
               </motion.div>

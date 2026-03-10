@@ -159,9 +159,13 @@ export const BarangMasuk = () => {
       }
       setIsModalOpen(false);
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving barang masuk:', error);
-      alert('Gagal menyimpan data. Pastikan koneksi internet stabil dan Firebase sudah dikonfigurasi dengan benar.');
+      if (error.code === 'permission-denied') {
+        alert('Gagal menyimpan: Izin ditolak. Pastikan Firestore Rules Anda sudah diatur ke "allow read, write: if true;" (untuk testing).');
+      } else {
+        alert(`Gagal menyimpan data: ${error.message || 'Terjadi kesalahan tidak dikenal'}`);
+      }
     }
   };
 

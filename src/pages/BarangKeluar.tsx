@@ -201,9 +201,13 @@ export const BarangKeluar = () => {
         keterangan: verifyStatus === 'Belum Selesai' ? verifyKeterangan : ''
       });
       setIsVerifyModalOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating status:', error);
-      alert('Gagal memperbarui status.');
+      if (error.code === 'permission-denied') {
+        alert('Gagal memperbarui: Izin ditolak. Periksa Firestore Rules.');
+      } else {
+        alert(`Gagal memperbarui status: ${error.message}`);
+      }
     }
   };
 
@@ -273,9 +277,13 @@ export const BarangKeluar = () => {
       }
       setIsModalOpen(false);
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving barang keluar:', error);
-      alert('Gagal menyimpan data. Pastikan koneksi internet stabil dan Firebase sudah dikonfigurasi dengan benar.');
+      if (error.code === 'permission-denied') {
+        alert('Gagal menyimpan: Izin ditolak. Pastikan Firestore Rules Anda sudah diatur ke "allow read, write: if true;" (untuk testing).');
+      } else {
+        alert(`Gagal menyimpan data: ${error.message || 'Terjadi kesalahan tidak dikenal'}`);
+      }
     }
   };
 
