@@ -384,8 +384,6 @@ export const BarangKeluar = () => {
       return;
     }
 
-    if (!window.confirm(`Duplikat data penerima "${item.penerima}"?`)) return;
-    
     try {
       await addBarangKeluar({
         tanggal: new Date(),
@@ -399,7 +397,6 @@ export const BarangKeluar = () => {
         status: 'Belum Selesai',
         keterangan: ''
       });
-      alert('Data berhasil diduplikat.');
     } catch (error: any) {
       console.error('Error duplicating data:', error);
       alert(`Gagal menduplikat data: ${error.message}`);
