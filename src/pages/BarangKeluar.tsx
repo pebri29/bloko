@@ -9,6 +9,7 @@ import {
   Eye,
   Edit2,
   Trash2,
+  Copy,
   X,
   User,
   Hash,
@@ -360,6 +361,51 @@ export const BarangKeluar = () => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    
+    if (!window.confirm(`Hapus ${selectedIds.length} data terpilih secara permanen?`)) return;
+
+    try {
+      const promises = selectedIds.map(id => deleteBarangKeluar(id));
+      await Promise.all(promises);
+      setSelectedIds([]);
+      alert('Berhasil menghapus data terpilih.');
+    } catch (error) {
+      console.error('Error bulk deleting:', error);
+      alert('Gagal menghapus beberapa data.');
+    }
+  };
+
+  const handleDuplicate = async (item: any) => {
+    const stock = getAvailableStock(item.jenis);
+    if (item.jumlahPaket > stock) {
+      alert(`Gagal duplikat: Stok tidak mencukupi! Stok tersedia untuk ${item.jenis}: ${stock} paket.`);
+      return;
+    }
+
+    if (!window.confirm(`Duplikat data penerima "${item.penerima}"?`)) return;
+    
+    try {
+      await addBarangKeluar({
+        tanggal: new Date(),
+        penerima: item.penerima,
+        nik: item.nik,
+        alamat: item.alamat,
+        kecamatan: item.kecamatan || '',
+        jenis: item.jenis,
+        jumlahPaket: item.jumlahPaket,
+        jenisPenyaluran: item.jenisPenyaluran || '',
+        status: 'Belum Selesai',
+        keterangan: ''
+      });
+      alert('Data berhasil diduplikat.');
+    } catch (error: any) {
+      console.error('Error duplicating data:', error);
+      alert(`Gagal menduplikat data: ${error.message}`);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -375,16 +421,28 @@ export const BarangKeluar = () => {
         <div className="flex flex-wrap items-center gap-3">
           <AnimatePresence>
             {selectedIds.length > 0 && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                onClick={handleBulkVerify}
-                className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all"
-              >
-                <CheckCircle size={18} />
-                Verifikasi ({selectedIds.length})
-              </motion.button>
+              <div className="flex items-center gap-2">
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  onClick={handleBulkVerify}
+                  className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all"
+                >
+                  <CheckCircle size={18} />
+                  Verifikasi ({selectedIds.length})
+                </motion.button>
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  onClick={handleBulkDelete}
+                  className="flex items-center gap-2 px-4 py-3 bg-red-600 text-white rounded-2xl font-bold shadow-lg shadow-red-500/20 hover:bg-red-700 transition-all"
+                >
+                  <Trash2 size={18} />
+                  Hapus ({selectedIds.length})
+                </motion.button>
+              </div>
             )}
           </AnimatePresence>
           <div className="flex bg-white/60 backdrop-blur-xl border border-white/40 rounded-2xl p-1">
@@ -543,6 +601,13 @@ export const BarangKeluar = () => {
                           title="Verifikasi Status"
                         >
                           <CheckCircle size={18} />
+                        </button>
+                        <button 
+                          onClick={() => handleDuplicate(item)}
+                          className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all" 
+                          title="Duplikat"
+                        >
+                          <Copy size={18} />
                         </button>
                         <button 
                           onClick={() => handleViewClick(item)}
